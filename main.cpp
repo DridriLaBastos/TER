@@ -19,7 +19,7 @@ InitReturnType initialize(const Graph& G, int lb)
 	VertexOrdering O0;	O0.reserve(G.size());
 	Clique C0;
 	Graph Gp(G);//Gp = G' (G prime)
-	//Calcule le degré de chaque sommets. Contient aussi U qui est l'ensemble des sommets
+	//Calcule le degrï¿½ de chaque sommets. Contient aussi U qui est l'ensemble des sommets
 	VertexDegreePairs degrees(G.computeDegrees());
 
 	for (size_t i = 0; i < G.size(); ++i)
@@ -55,9 +55,9 @@ InitReturnType initialize(const Graph& G, int lb)
 					degrees[i].d -= (degrees[i].v == neighbor) ? 1 : 0;
 			});
 
-		//O0 est l'ensemble des sommets dans l'ordre avec lequel ils sont trouvés par cette fonction
+		//O0 est l'ensemble des sommets dans l'ordre avec lequel ils sont trouvï¿½s par cette fonction
 		O0.emplace_back(vi->v);
-		//U <- U\{vi} Cette ligne arrive à la fin car on a besoin de vi avant
+		//U <- U\{vi} Cette ligne arrive ï¿½ la fin car on a besoin de vi avant
 		std::swap(*vi, degrees.back());
 		degrees.pop_back();
 	}
@@ -75,7 +75,7 @@ InitReturnType initialize(const Graph& G, int lb)
 	return { C0, O0, Gp };
 }
 
-//TODO: éliminer les copies innutiles ?
+//TODO: ï¿½liminer les copies innutiles ?
 VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 {
 	PROFILE_FUNC();
@@ -90,7 +90,7 @@ VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 		const auto found = std::find_if(PI.begin(), PI.end(),
 			[&](VertexSet& d)
 			{
-				/** test l'intersection entre les sommets déjà dans d et les voisins de v **/
+				/** test l'intersection entre les sommets dï¿½jï¿½ dans d et les voisins de v **/
 				for (const Vertex& vertex : v->neightbors)
 				{
 					for (size_t i = 0; i < d.size(); ++i)
@@ -195,12 +195,12 @@ Clique WLMC(const Graph& G)
 }
 
 /**
- * \brief Lit le fichier fournit par path et construit l'ensemble de tous les sommets et des arrêtes
+ * \brief Lit le fichier fournit par path et construit l'ensemble de tous les sommets et des arrï¿½tes
  *
  *
  * \param [in]	path Le chemin du fichier
- * \param [out]	Une référence sur une paire contenant un VertexContainer dans lequel tous les sommets du graph seront stockés,
- * 				et un Edges dans lequel toutes les arrêtes du graph seront stockées
+ * \param [out]	Une rï¿½fï¿½rence sur une paire contenant un VertexContainer dans lequel tous les sommets du graph seront stockï¿½s,
+ * 				et un Edges dans lequel toutes les arrï¿½tes du graph seront stockï¿½es
  */
 std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, VertexContainer& vertexContainer)
 {
@@ -213,16 +213,16 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 	VertexStruct nullVertex(0, 0);
 	std::pair<Vertices, Edges> ret;
 
-	unsigned int firstVertexNumber;		//< Le premier numéro de sommet de la ligne lu du fichier
-	unsigned int secondVertexNumber;	//< Le second numéro de sommet de la ligne lu du fichier
+	unsigned int firstVertexNumber;		//< Le premier numï¿½ro de sommet de la ligne lu du fichier
+	unsigned int secondVertexNumber;	//< Le second numï¿½ro de sommet de la ligne lu du fichier
 	Vertex secondVertex = &nullVertex;
 
 	time_t begin = time(NULL);
 	do
 	{
 		is >> firstVertexNumber >> secondVertexNumber;
-		//Le premier numéro de noeud lu dans un fichier '.edges' peut être n'importe quel numéro de noeud. Il faut donc repacourir
-		//l'ensemble des noeuds déjà lu et voir s'il a déjà été trouvé.
+		//Le premier numï¿½ro de noeud lu dans un fichier '.edges' peut ï¿½tre n'importe quel numï¿½ro de noeud. Il faut donc repacourir
+		//l'ensemble des noeuds dï¿½jï¿½ lu et voir s'il a dï¿½jï¿½ ï¿½tï¿½ trouvï¿½.
 		auto findResult = std::find_if(vertexContainer.begin(), vertexContainer.end(),
 			[firstVertexNumber](const std::unique_ptr<VertexStruct>& vs) { return vs->n == firstVertexNumber; });
 
@@ -236,7 +236,7 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 
 		const Vertex firstVertex = found ? findResult->get() : ret.first.back();
 
-		//Le deuxième noeud peut être plusieurs fois le même, on vérifie que c'est le même que le noeud précédent
+		//Le deuxiï¿½me noeud peut ï¿½tre plusieurs fois le mï¿½me, on vï¿½rifie que c'est le mï¿½me que le noeud prï¿½cï¿½dent
 		if (secondVertexNumber != secondVertex->n)
 		{
 			vertexContainer.emplace_back(new VertexStruct(secondVertexNumber));
@@ -244,7 +244,7 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 			secondVertex = ret.first.back();
 		}
 
-		//Il n'y a pas d'arrêtes duppliquées dans un fichier '.edge'. On peut donc directement la créer
+		//Il n'y a pas d'arrï¿½tes duppliquï¿½es dans un fichier '.edge'. On peut donc directement la crï¿½er
 		ret.second.emplace_back(makeEdge(firstVertex, secondVertex));
 
 	} while (!is.eof());
@@ -255,24 +255,21 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 	return ret;
 }
 
-#if defined(_MSC_VER)
-static void setup (void) {}
-#else
-static void setup(void)
-{
-	signal(SIGKILL, signalHandler);
-	signal(SIGQUIT, signalHandler);
-	signal(SIGINT, signalHandler);
-}
-#endif
-
-
 static void signalHandler(const int sigNum)
 {
 	PROFILE_FUNC();
 	std::cerr << "Exiting with signal: " << sigNum << std::endl;
 	END_SESSION();
 	exit(EXIT_FAILURE);
+}
+
+static void setup (void)
+{
+#if !defined(_MSC_VER)
+	signal(SIGKILL, signalHandler);
+	signal(SIGQUIT, signalHandler);
+	signal(SIGINT, signalHandler);
+#endif
 }
 
 
