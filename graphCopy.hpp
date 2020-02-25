@@ -225,10 +225,10 @@ public:
 				{
 					if (V[i] == e.first)
 						findFirst = true;
-
+				
 					if (V[i] == e.second)
 						findSecond = true;
-
+				
 					if (findFirst && findSecond)
 					{
 						ret.m_edges.emplace_back(e);
@@ -236,6 +236,7 @@ public:
 					}
 				}
 			});
+
 		return ret;
 	}
 
