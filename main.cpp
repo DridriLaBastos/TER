@@ -19,7 +19,7 @@ InitReturnType initialize(const Graph& G, int lb)
 	VertexOrdering O0;	O0.reserve(G.size());
 	Clique C0;
 	Graph Gp(G);//Gp = G' (G prime)
-	//Calcule le degr� de chaque sommets. Contient aussi U qui est l'ensemble des sommets
+	//Calcule le degré de chaque sommets. Contient aussi U qui est l'ensemble des sommets
 	VertexDegreePairs degrees(G.computeDegrees());
 
 	for (size_t i = 0; i < G.size(); ++i)
@@ -221,12 +221,12 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 	do
 	{
 		is >> firstVertexNumber >> secondVertexNumber;
-		//Le premier num�ro de noeud lu dans un fichier '.edges' peut �tre n'importe quel num�ro de noeud. Il faut donc repacourir
-		//l'ensemble des noeuds d�j� lu et voir s'il a d�j� �t� trouv�.
+		//Le premier numéro de noeud lu dans un fichier '.edges' peut être n'importe quel numéro de noeud. Il faut donc repacourir
+		//l'ensemble des noeuds déjà lu et voir s'il a déjà été trouvé.
 		auto findResult = std::find_if(vertexContainer.begin(), vertexContainer.end(),
 			[firstVertexNumber](const std::unique_ptr<VertexStruct>& vs) { return vs->n == firstVertexNumber; });
 
-		const bool found = (findResult != vertexContainer.end());
+		bool found = (findResult != vertexContainer.end());
 
 		if (!found)
 		{
@@ -236,15 +236,25 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 
 		const Vertex firstVertex = found ? findResult->get() : ret.first.back();
 
-		//Le deuxi�me noeud peut �tre plusieurs fois le m�me, on v�rifie que c'est le m�me que le noeud pr�c�dent
+		//Le deuxième noeud peut être plusieurs fois le même, on vérifie que c'est le même que le noeud précédent.
+		//Si ce n'est pas le même, on vérifie qu'il n'a pas déjà été ajouté et dans le cas contraire, on l'ajoute
 		if (secondVertexNumber != secondVertex->n)
 		{
-			vertexContainer.emplace_back(new VertexStruct(secondVertexNumber));
-			ret.first.emplace_back(vertexContainer.back().get());
-			secondVertex = ret.first.back();
+			findResult = std::find_if(vertexContainer.begin(), vertexContainer.end(),
+				[secondVertexNumber](const std::unique_ptr<VertexStruct>& vs) { return vs->n == secondVertexNumber; });
+			
+			bool found = (findResult != vertexContainer.end());
+
+			if (!found)
+			{
+				vertexContainer.emplace_back(new VertexStruct(secondVertexNumber));
+				ret.first.emplace_back(vertexContainer.back().get());
+			}
+
+			secondVertex = found ? findResult->get() : ret.first.back();
 		}
 
-		//Il n'y a pas d'arr�tes duppliqu�es dans un fichier '.edge'. On peut donc directement la cr�er
+		//Il n'y a pas d'arrêtes duppliquées dans un fichier '.edge'. On peut donc directement la créer
 		ret.second.emplace_back(makeEdge(firstVertex, secondVertex));
 
 	} while (!is.eof());

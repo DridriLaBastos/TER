@@ -43,7 +43,7 @@ static void connect(Vertex a, Vertex b)
 	PROFILE_FUNC();
 	auto found = std::find(a->neightbors.begin(), a->neightbors.end(), b);
 
-	//On connect deux sommets que s'ils ne sont pas déjà connectés
+	//On connect deux sommets que s'ils ne sont pas dï¿½jï¿½ connectï¿½s
 	if (found == a->neightbors.end())
 	{
 		a->neightbors.emplace_back(b);
@@ -108,7 +108,7 @@ public:
 		return max;
 	}
 
-	//TODO: améliorer le O(n^2)
+	//TODO: amï¿½liorer le O(n^2)
 	void orderWith(const VertexOrdering& O)
 	{
 		PROFILE_FUNC();
@@ -326,7 +326,7 @@ private:
 				m_vertices.emplace_back(e.second);
 		}
 
-		//Ajout des sommets qui ne sont reliés a aucune arrêtes
+		//Ajout des sommets qui ne sont reliÃ©s a aucune arrÃªtes
 		for (const Vertex& v : temp)
 		{
 			bool canAdd = true;
@@ -358,7 +358,7 @@ private:
 	}
 
 private:
-	Edges		m_edges;//Les arrêtes
+	Edges		m_edges;//Les arrï¿½tes
 	Vertices	m_vertices;//Les sommets
 };
 
