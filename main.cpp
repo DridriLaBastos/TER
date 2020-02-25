@@ -168,6 +168,7 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 Clique WLMC(const Graph& G)
 {
 	PROFILE_FUNC();
+	time_t begin = time(NULL);
 	InitReturnType i = initialize(G, 0);
 	Clique Cmax = i.C0;
 	VertexSet Vp = i.Gp.getVertexSet();
@@ -191,6 +192,10 @@ Clique WLMC(const Graph& G)
 				Cmax = Cp;
 		}
 	}
+	time_t end = time(NULL);
+
+	std::cout << "WLMC took: " << difftime(end, begin) << "s" << std::endl;
+
 	return Cmax;
 }
 
