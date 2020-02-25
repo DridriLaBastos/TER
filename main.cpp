@@ -308,7 +308,6 @@ void temp(void)
 	temp2();
 }
 
-//TODO: check good running
 int main(int argc, const char** argv)
 {
 	BEGIN_SESSION("WLMC Profile");
