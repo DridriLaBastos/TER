@@ -138,6 +138,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\graph.hpp" />
+    <ClInclude Include="..\graphCopy.hpp" />
+    <ClInclude Include="..\instrumentor.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\main.cpp" />
+    <ClCompile Include="..\Makefile" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\test.edges" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
