@@ -255,6 +255,18 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 	return ret;
 }
 
+#if defined(_MSC_VER)
+static void setup (void) {}
+#else
+static void setup(void)
+{
+	signal(SIGKILL, signalHandler);
+	signal(SIGQUIT, signalHandler);
+	signal(SIGINT, signalHandler);
+}
+#endif
+
+
 static void signalHandler(const int sigNum)
 {
 	PROFILE_FUNC();
@@ -263,24 +275,18 @@ static void signalHandler(const int sigNum)
 	exit(EXIT_FAILURE);
 }
 
-static void setup(void)
-{
-	signal(SIGKILL, signalHandler);
-	signal(SIGQUIT, signalHandler);
-	signal(SIGINT, signalHandler);
-}
 
 void temp1()
 {
 	PROFILE_FUNC();
-	std::cout << "Entering " << __PRETTY_FUNCTION__ << std::endl;
+	std::cout << "Entering " << FUNC_NAME << std::endl;
 	for (size_t i = 0; i < 10000000000; i += (i % 2 == 0) ? 2 : 5);
 }
 
 void temp2()
 {
 	PROFILE_FUNC();
-	std::cout << "Entering " << __PRETTY_FUNCTION__ << std::endl;
+	std::cout << "Entering " << FUNC_NAME << std::endl;
 	for (size_t i = 0; i < 10000000000; i += (i % 2 == 0) ? 1 : 2);
 }
 

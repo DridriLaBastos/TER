@@ -22,8 +22,15 @@
 
 #include <thread>
 
+//For use with windows
+#if defined(_MSC_VER)
+#define FUNC_NAME __FUNCSIG__
+#else
+#define FUNC_NAME __PRETTY_FUNCTION__
+#endif
+
 #define PROFILE(name) InstrumentationTimer timer__LINE__ (name)
-#define PROFILE_FUNC() PROFILE(__PRETTY_FUNCTION__)
+#define PROFILE_FUNC() PROFILE(FUNC_NAME)
 #define BEGIN_SESSION(name) Instrumentor::Get().BeginSession(name)
 #define END_SESSION() Instrumentor::Get().EndSession()
 
