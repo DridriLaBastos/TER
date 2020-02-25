@@ -75,7 +75,7 @@ InitReturnType initialize(const Graph& G, int lb)
 	return { C0, O0, Gp };
 }
 
-//TODO: �liminer les copies innutiles ?
+//TODO: Eliminer les copies innutiles ?
 VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 {
 	PROFILE_FUNC();

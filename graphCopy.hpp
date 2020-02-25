@@ -57,7 +57,6 @@ static Edge makeEdge(const Vertex a, const Vertex b)
 	return std::make_pair(a, b);
 }
 
-
 struct VertexDegreePair
 {
 	Vertex v;
@@ -272,21 +271,45 @@ public:
 	void removeVertex(const Vertex v)
 	{
 		PROFILE_FUNC();
-		size_t graphSize = m_edges.size();
-		for (size_t i = 0; i < graphSize; ++i)
-		{
-			Edge& currentEdge = m_edges[i];
 
-			if ((currentEdge.first == v) || (currentEdge.second == v))
+		size_t vPosInVertices = 0;
+
+		for (size_t i = 0; i < m_vertices.size(); ++i)
+		{
+			if (m_vertices[i] == v)
 			{
-				std::swap(m_edges[i], m_edges.back());
-				m_edges.pop_back();
-				--graphSize;
-				--i;
+				vPosInVertices = i;
+				break;
 			}
 		}
-		m_vertices.clear();
-		rebuildVerticesSet();
+
+		if (vPosInVertices < m_vertices.size())
+		{
+			Vertex saveOfLastVertex = m_vertices.back();
+
+			std::swap(m_vertices[vPosInVertices], m_vertices.back());
+			m_vertices.pop_back();
+
+			//On présèrve l'ordre des vertexs
+			for (size_t i = vPosInVertices; i < m_vertices.size() - 1; ++i)
+			{ m_vertices[i] = m_vertices[i+1]; }
+
+			m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
+
+			size_t graphSize = m_edges.size();
+			for (size_t i = 0; i < graphSize; ++i)
+			{
+				Edge& currentEdge = m_edges[i];
+
+				if ((currentEdge.first == v) || (currentEdge.second == v))
+				{
+					std::swap(m_edges[i], m_edges.back());
+					m_edges.pop_back();
+					--graphSize;
+					--i;
+				}
+			}
+		}
 	}
 
 	size_t size(void) const { return m_vertices.size(); }
