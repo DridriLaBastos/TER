@@ -291,7 +291,9 @@ public:
 			std::swap(m_vertices[vPosInVertices], m_vertices.back());
 			m_vertices.pop_back();
 
-			//On présèrve l'ordre des vertexs
+			//On présèrve l'ordre des vertex
+			//TODO: est-ce vraiment nécessaire ? Le profiler windows n'affichait même pas l'utilisation de orderWith
+			//comme importante pour le CPU ?
 			for (size_t i = vPosInVertices; i < m_vertices.size() - 1; ++i)
 			{ m_vertices[i] = m_vertices[i+1]; }
 
