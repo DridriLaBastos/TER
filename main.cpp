@@ -129,7 +129,6 @@ VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 	}
 
 	B.orderWith(O);
-	//std::cout << PI << std::endl;
 	return B;
 }
 
@@ -168,7 +167,11 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 Clique WLMC(const Graph& G)
 {
 	PROFILE_FUNC();
+<<<<<<< HEAD
 	time_t begin = time(NULL);
+=======
+	const time_t begin = time(NULL);
+>>>>>>> f1282d4bb696eb6b794dc6993a53f3df4c51734d
 	InitReturnType i = initialize(G, 0);
 	Clique Cmax = i.C0;
 	VertexSet Vp = i.Gp.getVertexSet();
@@ -192,7 +195,11 @@ Clique WLMC(const Graph& G)
 				Cmax = Cp;
 		}
 	}
+<<<<<<< HEAD
 	time_t end = time(NULL);
+=======
+	const time_t end = time(NULL);
+>>>>>>> f1282d4bb696eb6b794dc6993a53f3df4c51734d
 
 	std::cout << "WLMC took: " << difftime(end, begin) << "s" << std::endl;
 

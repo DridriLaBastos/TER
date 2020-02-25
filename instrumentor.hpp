@@ -29,11 +29,20 @@
 #define FUNC_NAME __PRETTY_FUNCTION__
 #endif
 
+#ifdef PROFILING
+
 #define PROFILE(name) InstrumentationTimer timer__LINE__ (name)
 #define PROFILE_FUNC() PROFILE(FUNC_NAME)
 #define BEGIN_SESSION(name) Instrumentor::Get().BeginSession(name)
 #define END_SESSION() Instrumentor::Get().EndSession()
+#else
 
+#define PROFILE(name)
+#define PROFILE_FUNC()
+#define BEGIN_SESSION(name)
+#define END_SESSION()
+
+#endif // PROFILING
 struct ProfileResult
 {
 	std::string Name;
