@@ -25,13 +25,13 @@ InitReturnType initialize(const Graph& G, int lb)
 	for (size_t i = 0; i < G.size(); ++i)
 	{
 		auto vi = std::min_element(degrees.begin(), degrees.end(),
-			[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.d <= b.d; });
+			[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.d < b.d; });
 
 		if (vi->d == degrees.size() - 1)
 		{
 			//Order U arbitrarily as vi, v_(i+1), v_(i+2)...
 			std::sort(degrees.begin(), degrees.end(),
-				[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.v->n <= b.v->n; });
+				[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.v->n < b.v->n; });
 
 			for (const auto& vdp : degrees)
 			{
@@ -316,9 +316,18 @@ int main(int argc, const char** argv)
 
 	setup();
 	VertexContainer container;
-	std::pair<Vertices, Edges> pair = createEdgesFromEdgesFile(argv[1], container);
-	std::cout << WLMC(Graph(pair.first, pair.second)) << std::endl;
+	try
+	{
+		std::pair<Vertices, Edges> pair = createEdgesFromEdgesFile(argv[1], container);
+		std::cout << WLMC(Graph(pair.first, pair.second)) << std::endl;
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
 
 	END_SESSION();
 	return EXIT_SUCCESS;
 }
+//graphs/bio-dmela.clq.edges
