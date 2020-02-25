@@ -129,7 +129,7 @@ VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 	}
 
 	B.orderWith(O);
-	std::cout << PI << std::endl;
+	//std::cout << PI << std::endl;
 	return B;
 }
 
