@@ -1,4 +1,4 @@
-#include "graphCopy.hpp"
+#include "graph.hpp"
 
 #include <array>
 #include <chrono>
@@ -15,7 +15,6 @@ struct InitReturnType
 /** TESTEE ET FONCTIONNE CORRECTEMENT **/
 InitReturnType initialize(const Graph& G, int lb)
 {
-	PROFILE_FUNC();
 	VertexOrdering O0;	O0.reserve(G.size());
 	Clique C0;
 	Graph Gp(G);//Gp = G' (G prime)
@@ -78,7 +77,6 @@ InitReturnType initialize(const Graph& G, int lb)
 //TODO: Eliminer les copies innutiles ?
 VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 {
-	PROFILE_FUNC();
 	VertexSet B;
 	VertexSets PI;
 	VertexSet V = G.getVertexSet();
@@ -134,7 +132,6 @@ VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 
 Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const VertexOrdering& O)
 {
-	PROFILE_FUNC();
 	if (G.empty())
 		return C;
 
@@ -166,7 +163,6 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 
 Clique WLMC(const Graph& G)
 {
-	PROFILE_FUNC();
 	const time_t begin = time(NULL);
 	InitReturnType i = initialize(G, 0);
 	Clique Cmax = i.C0;
@@ -208,13 +204,12 @@ Clique WLMC(const Graph& G)
  */
 std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, VertexContainer& vertexContainer)
 {
-	PROFILE_FUNC();
 	std::ifstream is(path);
 
 	if (!is.is_open())
 		throw std::logic_error("Unable to open \"" + path + "\"");
 
-	VertexStruct nullVertex(0, 0);
+	VertexStruct nullVertex(0, {0});
 	std::pair<Vertices, Edges> ret;
 
 	unsigned int firstVertexNumber;		//< Le premier num�ro de sommet de la ligne lu du fichier
@@ -271,9 +266,7 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 
 static void signalHandler(const int sigNum)
 {
-	PROFILE_FUNC();
 	std::cerr << "Exiting with signal: " << sigNum << std::endl;
-	END_SESSION();
 	exit(EXIT_FAILURE);
 }
 
@@ -286,31 +279,8 @@ static void setup (void)
 #endif
 }
 
-
-void temp1()
-{
-	PROFILE_FUNC();
-	std::cout << "Entering " << FUNC_NAME << std::endl;
-	for (size_t i = 0; i < 10000000000; i += (i % 2 == 0) ? 2 : 5);
-}
-
-void temp2()
-{
-	PROFILE_FUNC();
-	std::cout << "Entering " << FUNC_NAME << std::endl;
-	for (size_t i = 0; i < 10000000000; i += (i % 2 == 0) ? 1 : 2);
-}
-
-void temp(void)
-{
-	PROFILE_FUNC();
-	temp1();
-	temp2();
-}
-
 int main(int argc, const char** argv)
 {
-	BEGIN_SESSION("WLMC Profile");
 	if (argc != 2)
 	{
 		std::cerr << "arguments are <file path>\n";
@@ -330,7 +300,6 @@ int main(int argc, const char** argv)
 		return EXIT_FAILURE;
 	}
 
-	END_SESSION();
 	return EXIT_SUCCESS;
 }
 //graphs/bio-dmela.clq.edges
