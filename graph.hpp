@@ -28,6 +28,7 @@ struct VertexStruct
 	{
 		assert(W.size() == wCoeff.size());
 		this->n = n;
+		this->w = 0;
 
 		for (size_t i = 0; i < W.size(); ++i)
 			this->w += wCoeff[i] * W[i];

@@ -104,7 +104,7 @@ VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 		/** Si l'intersection est vide on test le poids **/
 		if (found != PI.end())
 		{
-			int sum = 0;
+			Weight sum = 0;
 			found->emplace_back(v);
 			std::for_each(PI.begin(), PI.end(), [&sum](const VertexSet& vs) { sum += vs.getMaxWeight(); });
 
@@ -116,7 +116,7 @@ VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 		}
 		else
 		{
-			int sum = v->w;
+			Weight sum = v->w;
 			std::for_each(PI.begin(), PI.end(), [&sum](const VertexSet& vs) { sum += vs.getMaxWeight(); });
 
 			if (sum <= t)
