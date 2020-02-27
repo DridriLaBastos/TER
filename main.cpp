@@ -163,7 +163,7 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 
 Clique WLMC(const Graph& G)
 {
-	const time_t begin = time(NULL);
+	const auto start = std::chrono::steady_clock::now();
 	InitReturnType i = initialize(G, 0);
 	Clique Cmax = i.C0;
 	VertexSet Vp = i.Gp.getVertexSet();
@@ -187,9 +187,9 @@ Clique WLMC(const Graph& G)
 				Cmax = Cp;
 		}
 	}
-	const time_t end = time(NULL);
+	const auto end = std::chrono::steady_clock::now();
 
-	std::cout << "WLMC took: " << difftime(end, begin) << "s" << std::endl;
+	std::cout << "WLMC took: " << std::chrono::duration_cast<std::chrono::seconds>(end-start).count() << "s" << std::endl;
 
 	return Cmax;
 }
@@ -217,7 +217,7 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 	bool parseThisLine = true;
 	Vertex secondVertex = &nullVertex;
 
-	time_t begin = time(NULL);
+	const auto start = std::chrono::steady_clock::now();
 	do
 	{
 		if (!readEdgesFile)
@@ -269,9 +269,9 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 
 	} while (!is.eof());
 
-	time_t end = time(NULL);
+	const auto end = std::chrono::steady_clock::now();
 
-	std::cout << "Creating vertex set took: " << difftime(end, begin) << "s" << std::endl;
+	std::cout << "Creating vertex set took: " << std::chrono::duration_cast<std::chrono::seconds>(end-start).count() << "s" << std::endl;
 	return ret;
 }
 
