@@ -2,30 +2,56 @@
 #define GRAPH_HPP
 
 #include <vector>
+#include <memory>
 #include <utility>
 #include <iostream>
 #include <algorithm>
 
-struct Vertex
+using Weight = int;
+
+//TODO: rewrite functions that modifies Vertex set to take in account the fact that each vertex has now a vector
+//of its neighbors
+struct VertexStruct
 {
 	unsigned int n;//Vertex number
-	int w;//Vertex weight
+	Weight w;//Vertex weight
 
-	Vertex(const unsigned int n, const int w = 1) { this->n = n;   this->w = w; }
-	Vertex(const Vertex& v) { n = v.n;   w = v.w; std::cout << "Vertex copy!\n"; }
-	Vertex* operator-> (void) { return this; }
-	const Vertex* operator->(void) const { return this; }
+	std::vector<VertexStruct*> neightbors;
+
+	VertexStruct(const unsigned int n, const Weight w = 1) { this->n = n;   this->w = w; }
+	VertexStruct(const VertexStruct& vs) { n = vs.n; w = vs.w; std::cout << "VertexStruct copy!\n"; }
 };
+
+//On veut le unique_ptr pour ne pas avoir de copy de VertexStruct si jamais VertexContainer.emplace_back doit allouer
+//un nouveau tableau
+using VertexContainer = std::vector<std::unique_ptr<VertexStruct>>;
+using Vertex = VertexStruct*;
 using Vertices = std::vector<Vertex>;
 using VertexOrdering = Vertices;
 
 using Edge = std::pair<Vertex, Vertex>;
 using Edges = std::vector<Edge>;
 
-Vertex makeVertex(const unsigned int n, const int w = 1) { return Vertex(n, w); }
-
 class VertexSet;
 using Clique = VertexSet;
+
+static void connect(Vertex a, Vertex b)
+{
+	auto found = std::find(a->neightbors.begin(), a->neightbors.end(), b);
+
+	//On connect deux sommets que s'ils ne sont pas dÃ©jÃ  connectÃ©s
+	if (found == a->neightbors.end())
+	{
+		a->neightbors.emplace_back(b);
+		b->neightbors.emplace_back(a);
+	}
+}
+
+static Edge makeEdge(const Vertex a, const Vertex b)
+{
+	connect(a, b);
+	return std::make_pair(a, b);
+}
 
 struct VertexDegreePair
 {
@@ -37,10 +63,6 @@ struct VertexDegreePair
 
 using VertexDegreePairs = std::vector<VertexDegreePair>;
 
-bool operator== (const Vertex& a, const Vertex& b) { return (a.n == b.n); }
-
-//TODO: réécrire ces classes sans faire de copie des Vertex. L'ensemble des sommets sera référencé via 
-//un std::vector<std::shared_ptr<Vertex>>
 class VertexSet
 {
 public:
@@ -52,7 +74,7 @@ public:
 	void pop_back(void) { m_vertices.pop_back(); }
 	void reserve(const size_t n) { m_vertices.reserve(n); }
 
-	const Vertices getVertices(void) const { return m_vertices; }
+	const Vertices& getVertices(void) const { return m_vertices; }
 
 	Vertices::iterator begin(void) { return m_vertices.begin(); }
 	Vertices::const_iterator begin(void) const { return m_vertices.begin(); }
@@ -60,22 +82,26 @@ public:
 	Vertices::iterator end(void) { return m_vertices.end(); }
 	Vertices::const_iterator end(void) const { return m_vertices.end(); }
 
-	int weight(void) const
+	Weight weight(void) const
 	{
 		int totalWeight = 0;
 
-		for (const auto& v : m_vertices)
-			totalWeight += v.w;
+		for (const Vertex v : m_vertices)
+			totalWeight += v->w;
 
 		return totalWeight;
 	}
 
-	int getMaxWeight(void) const
+	Weight getMaxWeight(void) const
 	{
-		return std::max_element(m_vertices.begin(), m_vertices.end(),
-			[](const Vertex& a, const Vertex& b) { return a.w <= b.w; })->w;
+		int max = 0;
+
+		for (const Vertex v : m_vertices)
+			max = (v->w > max) ? v->w : max;
+		return max;
 	}
 
+	//TODO: amÃ©liorer le O(n^2)
 	void orderWith(const VertexOrdering& O)
 	{
 		unsigned int vPos = 0;
@@ -100,14 +126,13 @@ public:
 			for (size_t i = begin; i <= end; ++i)
 				subset.emplace_back(m_vertices[i]);
 		}
-
 		return subset;
 	}
 
 	void remove(const VertexSet& V)
 	{
 		std::for_each(V.begin(), V.end(),
-			[&](const Vertex& v)
+			[&](const Vertex v)
 			{
 				for (size_t i = 0; i < m_vertices.size(); ++i)
 				{
@@ -133,7 +158,6 @@ public:
 
 		if (found == finalUnion.end())
 			finalUnion.emplace_back(v);
-
 		return finalUnion;
 	}
 
@@ -142,14 +166,12 @@ public:
 		VertexSet finalUnion(V1);
 		std::for_each(V2.begin(), V2.end(),
 			[&](const Vertex& v) { finalUnion = unionBetween(finalUnion, v); });
-
 		return finalUnion;
 	}
 
 	static VertexSet intersectionBetween(const VertexSet& V1, const VertexSet& V2)
 	{
 		VertexSet finalIntersection;
-
 		std::for_each(V1.begin(), V1.end(),
 			[&](const Vertex& v)
 			{
@@ -159,7 +181,6 @@ public:
 						finalIntersection.emplace_back(v);
 				}
 			});
-
 		return finalIntersection;
 	}
 
@@ -168,17 +189,17 @@ private:
 };
 using VertexSets = std::vector<VertexSet>;
 
-//TODO: storing vertex
 class Graph
 {
 public:
 	Graph(const Edges& edges = {}) : m_edges(edges) { rebuildVerticesSet(); }
+	Graph(const Vertices& vertices, const Edges& edges) : m_vertices(vertices), m_edges(edges) {}
 
 public:
 	Graph operator[](const VertexSet& V) const
 	{
 		Graph ret;
-		ret.m_vertices = std::move(V.getVertices());
+		ret.m_vertices = V.getVertices();
 		Edges E;
 
 		std::for_each(m_edges.begin(), m_edges.end(),
@@ -191,10 +212,10 @@ public:
 				{
 					if (V[i] == e.first)
 						findFirst = true;
-
+				
 					if (V[i] == e.second)
 						findSecond = true;
-
+				
 					if (findFirst && findSecond)
 					{
 						ret.m_edges.emplace_back(e);
@@ -208,23 +229,18 @@ public:
 
 	VertexDegreePairs computeDegrees(void) const
 	{
-		return computeDegreesForVertices(m_vertices);
-	}
+		VertexDegreePairs ret;	ret.reserve(m_vertices.size());
 
-	VertexDegreePairs computeDegreesForVertices(const Vertices& vertices) const
-	{
-		VertexDegreePairs ret;
-
-		for (const Vertex v : vertices)
-			ret.emplace_back(v, computeDegreeForVertex(v));
+		for (const Vertex v : m_vertices)
+			ret.emplace_back(v, v->neightbors.size());
 
 		return ret;
 	}
 
+	//TODO: maybe removed
 	VertexSet getNeighborsOf(const Vertex& v) const
 	{
 		VertexSet neighbors;
-
 		for (const Edge& e : m_edges)
 		{
 			if (e.first == v)
@@ -232,28 +248,51 @@ public:
 			else if (e.second == v)
 				neighbors.emplace_back(e.first);
 		}
-
 		return neighbors;
 	}
 
 	void removeVertex(const Vertex v)
 	{
-		size_t graphSize = m_edges.size();
+		size_t vPosInVertices = 0;
 
-		for (size_t i = 0; i < graphSize; ++i)
+		for (size_t i = 0; i < m_vertices.size(); ++i)
 		{
-			Edge& currentEdge = m_edges[i];
-
-			if ((currentEdge.first == v) || (currentEdge.second == v))
+			if (m_vertices[i] == v)
 			{
-				std::swap(m_edges[i], m_edges.back());
-				m_edges.pop_back();
-				--graphSize;
-				--i;
+				vPosInVertices = i;
+				break;
 			}
 		}
-		m_vertices.clear();
-		rebuildVerticesSet();
+
+		if (vPosInVertices < m_vertices.size())
+		{
+			Vertex saveOfLastVertex = m_vertices.back();
+
+			std::swap(m_vertices[vPosInVertices], m_vertices.back());
+			m_vertices.pop_back();
+
+			//On prÃ©sÃ¨rve l'ordre des vertex
+			//TODO: est-ce vraiment nÃ©cessaire ? Le profiler windows n'affichait mÃªme pas l'utilisation de orderWith
+			//comme importante pour le CPU ?
+			for (size_t i = vPosInVertices; i < m_vertices.size() - 1; ++i)
+			{ m_vertices[i] = m_vertices[i+1]; }
+
+			m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
+
+			size_t graphSize = m_edges.size();
+			for (size_t i = 0; i < graphSize; ++i)
+			{
+				Edge& currentEdge = m_edges[i];
+
+				if ((currentEdge.first == v) || (currentEdge.second == v))
+				{
+					std::swap(m_edges[i], m_edges.back());
+					m_edges.pop_back();
+					--graphSize;
+					--i;
+				}
+			}
+		}
 	}
 
 	size_t size(void) const { return m_vertices.size(); }
@@ -292,7 +331,7 @@ private:
 				m_vertices.emplace_back(e.second);
 		}
 
-		//Ajout des sommets qui ne sont reliés a aucune arrêtes
+		//Ajout des sommets qui ne sont reliÃ©s a aucune arrÃªtes
 		for (const Vertex& v : temp)
 		{
 			bool canAdd = true;
@@ -314,24 +353,22 @@ private:
 	unsigned int computeDegreeForVertex(const Vertex v) const
 	{
 		unsigned int degreeOfV = 0;
-
 		for (const Edge& e : m_edges)
 		{
 			if ((e.first == v) || (e.second == v))
 				++degreeOfV;
 		}
-
 		return degreeOfV;
 	}
 
 private:
-	Edges		m_edges;//Les arrêtes
+	Edges		m_edges;//Les arrï¿½tes
 	Vertices	m_vertices;//Les sommets
 };
 
 std::ostream& operator<< (std::ostream& stream, const Vertex& v)
 {
-	stream << "(" << v.n << ", " << v.w << ")";
+	stream << "(" << v->n << ", " << v->w << ")";
 	return stream;
 }
 
@@ -366,6 +403,5 @@ std::ostream& operator<< (std::ostream& stream, const Graph& g)
 
 	return stream;
 }
-
 
 #endif

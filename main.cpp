@@ -1,9 +1,9 @@
-#include "graphCopy.hpp"
-
 #include <array>
 #include <chrono>
 #include <fstream>
 #include <signal.h>
+
+#include "graph.hpp"
 
 struct InitReturnType
 {
@@ -15,7 +15,6 @@ struct InitReturnType
 /** TESTEE ET FONCTIONNE CORRECTEMENT **/
 InitReturnType initialize(const Graph& G, int lb)
 {
-	PROFILE_FUNC();
 	VertexOrdering O0;	O0.reserve(G.size());
 	Clique C0;
 	Graph Gp(G);//Gp = G' (G prime)
@@ -78,7 +77,6 @@ InitReturnType initialize(const Graph& G, int lb)
 //TODO: Eliminer les copies innutiles ?
 VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 {
-	PROFILE_FUNC();
 	VertexSet B;
 	VertexSets PI;
 	VertexSet V = G.getVertexSet();
@@ -90,7 +88,7 @@ VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 		const auto found = std::find_if(PI.begin(), PI.end(),
 			[&](VertexSet& d)
 			{
-				/** test l'intersection entre les sommets d�j� dans d et les voisins de v **/
+				/** test l'intersection entre les sommets déjà dans d et les voisins de v **/
 				for (const Vertex& vertex : v->neightbors)
 				{
 					for (size_t i = 0; i < d.size(); ++i)
@@ -134,7 +132,6 @@ VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 
 Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const VertexOrdering& O)
 {
-	PROFILE_FUNC();
 	if (G.empty())
 		return C;
 
@@ -166,7 +163,6 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 
 Clique WLMC(const Graph& G)
 {
-	PROFILE_FUNC();
 	const time_t begin = time(NULL);
 	InitReturnType i = initialize(G, 0);
 	Clique Cmax = i.C0;
@@ -203,12 +199,11 @@ Clique WLMC(const Graph& G)
  *
  *
  * \param [in]	path Le chemin du fichier
- * \param [out]	Une r�f�rence sur une paire contenant un VertexContainer dans lequel tous les sommets du graph seront stock�s,
- * 				et un Edges dans lequel toutes les arr�tes du graph seront stock�es
+ * \param [out]	Une référence sur une paire contenant un VertexContainer dans lequel tous les sommets du graph seront stockés,
+ * 				et un Edges dans lequel toutes les arr�tes du graph seront stockées
  */
-std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, VertexContainer& vertexContainer)
+std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, VertexContainer& vertexContainer, const bool readEdgesFile)
 {
-	PROFILE_FUNC();
 	std::ifstream is(path);
 
 	if (!is.is_open())
@@ -217,49 +212,60 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 	VertexStruct nullVertex(0, 0);
 	std::pair<Vertices, Edges> ret;
 
-	unsigned int firstVertexNumber;		//< Le premier num�ro de sommet de la ligne lu du fichier
-	unsigned int secondVertexNumber;	//< Le second num�ro de sommet de la ligne lu du fichier
+	unsigned int firstVertexNumber;		//< Le premier numéro de sommet de la ligne lu du fichier
+	unsigned int secondVertexNumber;	//< Le second numéro de sommet de la ligne lu du fichier
+	bool parseThisLine = true;
 	Vertex secondVertex = &nullVertex;
 
 	time_t begin = time(NULL);
 	do
 	{
-		is >> firstVertexNumber >> secondVertexNumber;
-		//Le premier numéro de noeud lu dans un fichier '.edges' peut être n'importe quel numéro de noeud. Il faut donc repacourir
-		//l'ensemble des noeuds déjà lu et voir s'il a déjà été trouvé.
-		auto findResult = std::find_if(vertexContainer.begin(), vertexContainer.end(),
-			[firstVertexNumber](const std::unique_ptr<VertexStruct>& vs) { return vs->n == firstVertexNumber; });
-
-		bool found = (findResult != vertexContainer.end());
-
-		if (!found)
+		if (!readEdgesFile)
 		{
-			vertexContainer.emplace_back(new VertexStruct(firstVertexNumber));
-			ret.first.emplace_back(vertexContainer.back().get());
+			char tmp = '\0';
+			is >> tmp;
+			parseThisLine = (tmp == 'e');
 		}
 
-		const Vertex firstVertex = found ? findResult->get() : ret.first.back();
-
-		//Le deuxième noeud peut être plusieurs fois le même, on vérifie que c'est le même que le noeud précédent.
-		//Si ce n'est pas le même, on vérifie qu'il n'a pas déjà été ajouté et dans le cas contraire, on l'ajoute
-		if (secondVertexNumber != secondVertex->n)
+		if (parseThisLine)
 		{
-			findResult = std::find_if(vertexContainer.begin(), vertexContainer.end(),
-				[secondVertexNumber](const std::unique_ptr<VertexStruct>& vs) { return vs->n == secondVertexNumber; });
-			
+			is >> firstVertexNumber >> secondVertexNumber;
+			//Le premier numéro de noeud lu dans un fichier '.edges' peut être n'importe quel numéro de noeud. Il faut donc repacourir
+			//l'ensemble des noeuds déjà lu et voir s'il a déjà été trouvé.
+			auto findResult = std::find_if(vertexContainer.begin(), vertexContainer.end(),
+				[firstVertexNumber](const std::unique_ptr<VertexStruct>& vs) { return vs->n == firstVertexNumber; });
+
 			bool found = (findResult != vertexContainer.end());
 
 			if (!found)
 			{
-				vertexContainer.emplace_back(new VertexStruct(secondVertexNumber));
+				vertexContainer.emplace_back(new VertexStruct(firstVertexNumber));
 				ret.first.emplace_back(vertexContainer.back().get());
 			}
 
-			secondVertex = found ? findResult->get() : ret.first.back();
-		}
+			const Vertex firstVertex = found ? findResult->get() : ret.first.back();
 
-		//Il n'y a pas d'arrêtes duppliquées dans un fichier '.edge'. On peut donc directement la créer
-		ret.second.emplace_back(makeEdge(firstVertex, secondVertex));
+			//Le deuxième noeud peut être plusieurs fois le même, on vérifie que c'est le même que le noeud précédent.
+			//Si ce n'est pas le même, on vérifie qu'il n'a pas déjà été ajouté et dans le cas contraire, on l'ajoute
+			if (secondVertexNumber != secondVertex->n)
+			{
+				findResult = std::find_if(vertexContainer.begin(), vertexContainer.end(),
+					[secondVertexNumber](const std::unique_ptr<VertexStruct>& vs) { return vs->n == secondVertexNumber; });
+				
+				bool found = (findResult != vertexContainer.end());
+
+				if (!found)
+				{
+					vertexContainer.emplace_back(new VertexStruct(secondVertexNumber));
+					ret.first.emplace_back(vertexContainer.back().get());
+				}
+
+				secondVertex = found ? findResult->get() : ret.first.back();
+			}
+
+			//Il n'y a pas d'arrêtes duppliquées dans un fichier '.edge'. On peut donc directement la créer
+			ret.second.emplace_back(makeEdge(firstVertex, secondVertex));
+		}
 
 	} while (!is.eof());
 
@@ -271,9 +277,7 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 
 static void signalHandler(const int sigNum)
 {
-	PROFILE_FUNC();
 	std::cerr << "Exiting with signal: " << sigNum << std::endl;
-	END_SESSION();
 	exit(EXIT_FAILURE);
 }
 
@@ -286,51 +290,37 @@ static void setup (void)
 #endif
 }
 
-
-void temp1()
-{
-	PROFILE_FUNC();
-	std::cout << "Entering " << FUNC_NAME << std::endl;
-	for (size_t i = 0; i < 10000000000; i += (i % 2 == 0) ? 2 : 5);
-}
-
-void temp2()
-{
-	PROFILE_FUNC();
-	std::cout << "Entering " << FUNC_NAME << std::endl;
-	for (size_t i = 0; i < 10000000000; i += (i % 2 == 0) ? 1 : 2);
-}
-
-void temp(void)
-{
-	PROFILE_FUNC();
-	temp1();
-	temp2();
-}
-
 int main(int argc, const char** argv)
 {
-	BEGIN_SESSION("WLMC Profile");
-	if (argc != 2)
-	{
-		std::cerr << "arguments are <file path>\n";
-		return EXIT_FAILURE;
-	}
+	//if (argc != 2)
+	//{
+	//	std::cerr << "arguments are <file path>\n";
+	//	return EXIT_FAILURE;
+	//}
 
 	setup();
 	VertexContainer container;
-	try
-	{
-		std::pair<Vertices, Edges> pair = createEdgesFromEdgesFile(argv[1], container);
-		std::cout << WLMC(Graph(pair.first, pair.second)) << std::endl;
-	}
-	catch (const std::exception& e)
-	{
-		std::cout << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
 
-	END_SESSION();
+	//std::pair<Vertices, Edges> pair = createEdgesFromEdgesFile(argv[1], container,true);
+	VertexStruct v1 (1);
+	VertexStruct v2 (2);
+	VertexStruct v3 (3);
+	VertexStruct v4 (4);
+	VertexStruct v5 (5,1000);
+	VertexStruct v6 (6);
+	VertexStruct v7 (4);
+	VertexStruct v8 (8);
+	VertexStruct v9 (9,100);
+
+	Edges e ({makeEdge(&v1,&v2),   makeEdge(&v1,&v3),
+			  makeEdge(&v2,&v3),   makeEdge(&v2,&v4),   makeEdge(&v2,&v6),   makeEdge(&v2,&v7),
+			  makeEdge(&v3,&v4),   makeEdge(&v3,&v6),
+			  makeEdge(&v4,&v5),   makeEdge(&v4,&v6),
+			  makeEdge(&v5,&v6),   makeEdge(&v5,&v9),
+			  makeEdge(&v6,&v7),   makeEdge(&v7,&v8),   makeEdge(&v8,&v9)});
+
+	std::cout << WLMC(Graph(e/*pair.first,pair.second*/)) << std::endl;
+
 	return EXIT_SUCCESS;
 }
 //graphs/bio-dmela.clq.edges
