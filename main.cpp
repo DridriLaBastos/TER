@@ -293,6 +293,8 @@ static void setup (void)
 #endif
 }
 
+#include "graphFileReader.hpp"
+
 int main(int argc, const char** argv)
 {
 	if (argc != 2)
@@ -302,7 +304,6 @@ int main(int argc, const char** argv)
 	}
 
 	setup();
-	VertexContainer container;
 
 	std::pair<Vertices, Edges> pair = createEdgesFromEdgesFile(argv[1], container,true);
 	/*VertexStruct v1 (1);

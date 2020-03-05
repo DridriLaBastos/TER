@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClInclude Include="..\graph.hpp" />
     <ClInclude Include="..\graphCopy.hpp" />
+    <ClInclude Include="..\graphFileReader.hpp" />
     <ClInclude Include="..\instrumentor.hpp" />
   </ItemGroup>
   <ItemGroup>
