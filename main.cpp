@@ -304,6 +304,7 @@ int main(int argc, const char** argv)
 	}
 
 	setup();
+	VertexContainer container;
 
 	std::pair<Vertices, Edges> pair = createEdgesFromEdgesFile(argv[1], container,true);
 	/*VertexStruct v1 (1);
