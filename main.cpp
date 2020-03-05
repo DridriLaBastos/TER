@@ -190,7 +190,6 @@ Clique WLMC(const Graph& G)
 	const auto end = std::chrono::steady_clock::now();
 
 	std::cout << "WLMC took: " << std::chrono::duration_cast<std::chrono::seconds>(end-start).count() << "s" << std::endl;
-
 	return Cmax;
 }
 
@@ -211,6 +210,8 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 
 	VertexStruct nullVertex(0, 0);
 	std::pair<Vertices, Edges> ret;
+	ret.first.reserve(1000000);
+	ret.second.reserve(10000000);
 
 	unsigned int firstVertexNumber;		//< Le premier numéro de sommet de la ligne lu du fichier
 	unsigned int secondVertexNumber;	//< Le second numéro de sommet de la ligne lu du fichier
@@ -269,6 +270,8 @@ std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, Ver
 
 	} while (!is.eof());
 
+	ret.first.shrink_to_fit();
+	ret.second.shrink_to_fit();
 	const auto end = std::chrono::steady_clock::now();
 
 	std::cout << "Creating vertex set took: " << std::chrono::duration_cast<std::chrono::seconds>(end-start).count() << "s" << std::endl;
@@ -292,17 +295,17 @@ static void setup (void)
 
 int main(int argc, const char** argv)
 {
-	//if (argc != 2)
-	//{
-	//	std::cerr << "arguments are <file path>\n";
-	//	return EXIT_FAILURE;
-	//}
+	if (argc != 2)
+	{
+		std::cerr << "arguments are <file path>\n";
+		return EXIT_FAILURE;
+	}
 
 	setup();
 	VertexContainer container;
 
-	//std::pair<Vertices, Edges> pair = createEdgesFromEdgesFile(argv[1], container,true);
-	VertexStruct v1 (1);
+	std::pair<Vertices, Edges> pair = createEdgesFromEdgesFile(argv[1], container,true);
+	/*VertexStruct v1 (1);
 	VertexStruct v2 (2);
 	VertexStruct v3 (3);
 	VertexStruct v4 (4);
@@ -317,10 +320,11 @@ int main(int argc, const char** argv)
 			  makeEdge(&v3,&v4),   makeEdge(&v3,&v6),
 			  makeEdge(&v4,&v5),   makeEdge(&v4,&v6),
 			  makeEdge(&v5,&v6),   makeEdge(&v5,&v9),
-			  makeEdge(&v6,&v7),   makeEdge(&v7,&v8),   makeEdge(&v8,&v9)});
+			  makeEdge(&v6,&v7),   makeEdge(&v7,&v8),   makeEdge(&v8,&v9)});*/
 
-	std::cout << WLMC(Graph(e/*pair.first,pair.second*/)) << std::endl;
+	Clique Cmax = WLMC(Graph(pair.first,pair.second));
+	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
+	std::cout << Cmax << std::endl;
 
 	return EXIT_SUCCESS;
 }
-//graphs/bio-dmela.clq.edges
