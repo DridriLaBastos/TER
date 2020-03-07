@@ -4,6 +4,7 @@
 #include <signal.h>
 
 #include "graph.hpp"
+#include "graphFileReader.hpp"
 
 struct InitReturnType
 {
@@ -193,91 +194,6 @@ Clique WLMC(const Graph& G)
 	return Cmax;
 }
 
-/**
- * \brief Lit le fichier fournit par path et construit l'ensemble de tous les sommets et des arr�tes
- *
- *
- * \param [in]	path Le chemin du fichier
- * \param [out]	Une référence sur une paire contenant un VertexContainer dans lequel tous les sommets du graph seront stockés,
- * 				et un Edges dans lequel toutes les arr�tes du graph seront stockées
- */
-std::pair<Vertices, Edges> createEdgesFromEdgesFile(const std::string& path, VertexContainer& vertexContainer, const bool readEdgesFile)
-{
-	std::ifstream is(path);
-
-	if (!is.is_open())
-		throw std::logic_error("Unable to open \"" + path + "\"");
-
-	VertexStruct nullVertex(0, 0);
-	std::pair<Vertices, Edges> ret;
-	ret.first.reserve(1000000);
-	ret.second.reserve(10000000);
-
-	unsigned int firstVertexNumber;		//< Le premier numéro de sommet de la ligne lu du fichier
-	unsigned int secondVertexNumber;	//< Le second numéro de sommet de la ligne lu du fichier
-	bool parseThisLine = true;
-	Vertex secondVertex = &nullVertex;
-
-	const auto start = std::chrono::steady_clock::now();
-	do
-	{
-		if (!readEdgesFile)
-		{
-			char tmp = '\0';
-			is >> tmp;
-			parseThisLine = (tmp == 'e');
-		}
-
-		if (parseThisLine)
-		{
-			is >> firstVertexNumber >> secondVertexNumber;
-			//Le premier numéro de noeud lu dans un fichier '.edges' peut être n'importe quel numéro de noeud. Il faut donc repacourir
-			//l'ensemble des noeuds déjà lu et voir s'il a déjà été trouvé.
-			auto findResult = std::find_if(vertexContainer.begin(), vertexContainer.end(),
-				[firstVertexNumber](const std::unique_ptr<VertexStruct>& vs) { return vs->n == firstVertexNumber; });
-
-			bool found = (findResult != vertexContainer.end());
-
-			if (!found)
-			{
-				vertexContainer.emplace_back(new VertexStruct(firstVertexNumber));
-				ret.first.emplace_back(vertexContainer.back().get());
-			}
-
-			const Vertex firstVertex = found ? findResult->get() : ret.first.back();
-
-			//Le deuxième noeud peut être plusieurs fois le même, on vérifie que c'est le même que le noeud précédent.
-			//Si ce n'est pas le même, on vérifie qu'il n'a pas déjà été ajouté et dans le cas contraire, on l'ajoute
-			if (secondVertexNumber != secondVertex->n)
-			{
-				findResult = std::find_if(vertexContainer.begin(), vertexContainer.end(),
-					[secondVertexNumber](const std::unique_ptr<VertexStruct>& vs) { return vs->n == secondVertexNumber; });
-				
-				bool found = (findResult != vertexContainer.end());
-
-				if (!found)
-				{
-					vertexContainer.emplace_back(new VertexStruct(secondVertexNumber));
-					ret.first.emplace_back(vertexContainer.back().get());
-				}
-
-				secondVertex = found ? findResult->get() : ret.first.back();
-			}
-
-			//Il n'y a pas d'arrêtes duppliquées dans un fichier '.edge'. On peut donc directement la créer
-			ret.second.emplace_back(makeEdge(firstVertex, secondVertex));
-		}
-
-	} while (!is.eof());
-
-	ret.first.shrink_to_fit();
-	ret.second.shrink_to_fit();
-	const auto end = std::chrono::steady_clock::now();
-
-	std::cout << "Creating vertex set took: " << std::chrono::duration_cast<std::chrono::seconds>(end-start).count() << "s" << std::endl;
-	return ret;
-}
-
 static void signalHandler(const int sigNum)
 {
 	std::cerr << "Exiting with signal: " << sigNum << std::endl;
@@ -293,8 +209,6 @@ static void setup (void)
 #endif
 }
 
-#include "graphFileReader.hpp"
-
 int main(int argc, const char** argv)
 {
 	if (argc != 2)
@@ -306,7 +220,10 @@ int main(int argc, const char** argv)
 	setup();
 	VertexContainer container;
 
-	std::pair<Vertices, Edges> pair = createEdgesFromEdgesFile(argv[1], container,true);
+	GraphFileReader reader (argv[1]);
+	//reader.readFile();
+
+	std::pair<Vertices, Edges> pair = reader.readFile(container);
 	/*VertexStruct v1 (1);
 	VertexStruct v2 (2);
 	VertexStruct v3 (3);

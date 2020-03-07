@@ -7,7 +7,7 @@
 #include <iostream>
 #include <algorithm>
 
-using Weight = int;
+using Weight = float;
 
 //TODO: rewrite functions that modifies Vertex set to take in account the fact that each vertex has now a vector
 //of its neighbors
@@ -47,7 +47,7 @@ static void connect(Vertex a, Vertex b)
 	}
 }
 
-static Edge makeEdge(const Vertex a, const Vertex b)
+static Edge makeEdge(const Vertex& a, const Vertex& b)
 {
 	connect(a, b);
 	return std::make_pair(a, b);
