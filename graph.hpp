@@ -9,8 +9,6 @@
 
 using Weight = float;
 
-//TODO: rewrite functions that modifies Vertex set to take in account the fact that each vertex has now a vector
-//of its neighbors
 struct VertexStruct
 {
 	unsigned int n;//Vertex number
@@ -235,20 +233,6 @@ public:
 			ret.emplace_back(v, v->neightbors.size());
 
 		return ret;
-	}
-
-	//TODO: maybe removed
-	VertexSet getNeighborsOf(const Vertex& v) const
-	{
-		VertexSet neighbors;
-		for (const Edge& e : m_edges)
-		{
-			if (e.first == v)
-				neighbors.emplace_back(e.second);
-			else if (e.second == v)
-				neighbors.emplace_back(e.first);
-		}
-		return neighbors;
 	}
 
 	void removeVertex(const Vertex v)
