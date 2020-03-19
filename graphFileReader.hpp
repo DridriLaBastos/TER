@@ -79,7 +79,7 @@ class GraphFileReader
 			unsigned int n1 = 0;
 			unsigned int n2 = 0;
 
-			//A priori le fichier n'est pas trié, il n'y a donc aucun garantie que le noeud lu n'ait pas
+			//A priori le fichier n'est pas trié, il n'y a donc aucune garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
 			m_stream >> n1 >> n2;
 			

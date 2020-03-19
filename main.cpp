@@ -52,7 +52,10 @@ InitReturnType initialize(const Graph& G, Weight lb)
 			[&](const Vertex& neighbor)
 			{
 				for (size_t i = 0; i < degrees.size(); ++i)
-					degrees[i].d -= (degrees[i].v == neighbor) ? 1 : 0;
+				{
+					if (degrees[i].v == neighbor)
+						--degrees[i].d;
+				}
 			});
 
 		//O0 est l'ensemble des sommets dans l'ordre avec lequel ils sont trouv�s par cette fonction
