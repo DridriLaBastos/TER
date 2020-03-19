@@ -66,6 +66,7 @@ class GraphFileReader
 
 		void findEdgeFromVerticesAndEmplaceIfNot(const Vertex& v1, const Vertex&v2, Edges& edges) const
 		{
+			//Wouah *_*
 			auto found = std::find_if(v1->neightbors.begin(), v1->neightbors.end(),
 				[&v2](const Vertex& vs)
 				{ return vs == v2; });
