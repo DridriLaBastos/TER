@@ -2,6 +2,7 @@
 #define GRAPH_FILE_READER_HPP
 
 #include <cctype>
+#include <chrono>
 #include <string>
 #include <cstring>
 #include <fstream>
@@ -22,6 +23,8 @@ class GraphFileReader
 			std::pair<Vertices,Edges> ret;
 			ret.first.reserve(1000000);   ret.second.reserve(1000000);
 
+			std::cout << "Begin reading... ";
+			auto begin = std::chrono::system_clock::now();
 			do
 			{
 				if ((char)m_stream.peek() == '%')
@@ -30,6 +33,9 @@ class GraphFileReader
 					parseLine(ret,container);
 				
 			} while (!m_stream.eof());
+			auto end = std::chrono::system_clock::now();
+
+			std::cout << "took: " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "s" << std::endl;
 
 			ret.first.shrink_to_fit();
 			ret.second.shrink_to_fit();
@@ -75,17 +81,10 @@ class GraphFileReader
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
 			m_stream >> n1 >> n2;
 
-			//Si on atteind la fin du fichier avant d'avoir lu le deuxième numéro de noeud, alors il y a un
-			//problème
-			//if (m_stream.eof())
-			//	throw std::logic_error("ERROR: EOF but second vertex for edge expected");
-
-			//m_stream >> n2;
-
 			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
 			const Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
 
-			//Une fois que l'on a trouv" les vertex correspondant aux valeurs que l'on a lu du fichier,
+			//Une fois que l'on a trouvé les vertex correspondant aux valeurs que l'on a lu du fichier,
 			//il faut vérifier que l'arrête qu'ils forment n'existe pas déjà car rien ne garantit
 			//qu'une arrête ne soit pas mise deux fois (par exemple (1,0) et (0,1) sont la même arrête et on
 			//ne veut pas la mettre deux fois)
