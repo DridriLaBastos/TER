@@ -22,6 +22,8 @@ class GraphFileReader
 		{
 			std::pair<Vertices,Edges> ret;
 			ret.first.reserve(1000000);   ret.second.reserve(1000000);
+			container.clear();
+			container.resize(1000000);
 
 			std::cout << "Begin reading... ";
 			auto begin = std::chrono::system_clock::now();
@@ -39,6 +41,7 @@ class GraphFileReader
 
 			ret.first.shrink_to_fit();
 			ret.second.shrink_to_fit();
+			container.shrink_to_fit();
 			return ret;
 		}
 	
@@ -48,27 +51,26 @@ class GraphFileReader
 
 		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container) const
 		{
-			auto findResult = std::find_if(container.begin(), container.end(),
-				[vertexNumber](const std::unique_ptr<VertexStruct>& vs) { return vs->n == vertexNumber; });
-
-			const bool found = (findResult != container.end());
-
-			if (!found)
-			{
-				container.emplace_back(new VertexStruct(vertexNumber));
-				vertices.emplace_back(container.back().get());
-			}
+			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut petre sûr que le container est assez grand pour contenir tous les sommets
+			if (vertexNumber >= container.capacity())
+				container.resize(container.capacity() * 2);
 			
-			return found ? findResult->get() : vertices.back();
+			if (container[vertexNumber].get() == nullptr)
+			{
+				container[vertexNumber] = std::make_unique<VertexStruct>(vertexNumber);
+				vertices.emplace_back(container[vertexNumber].get());
+			}
+
+			return container[vertexNumber].get();
 		}
 
 		void findEdgeFromVerticesAndEmplaceIfNot(const Vertex& v1, const Vertex&v2, Edges& edges) const
 		{
-			auto found = std::find_if(edges.begin(), edges.end(),
-				[&v1,&v2](const Edge& e)
-				{ return ((e.first == v1) && (e.second == v2)) || ((e.first == v2) && (e.second == v1)); });
+			auto found = std::find_if(v1->neightbors.begin(), v1->neightbors.end(),
+				[&v2](const Vertex& vs)
+				{ return vs == v2; });
 			
-			if (found == edges.end())
+			if (found == v1->neightbors.end())
 				edges.emplace_back(makeEdge(v1,v2));
 		}
 
@@ -77,10 +79,10 @@ class GraphFileReader
 			unsigned int n1 = 0;
 			unsigned int n2 = 0;
 
-			//A priori le fichier n'est pas trié, il n'y a donc aucun garantie que le noeud que l'on lit n'est pas
+			//A priori le fichier n'est pas trié, il n'y a donc aucun garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
 			m_stream >> n1 >> n2;
-
+			
 			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
 			const Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
 

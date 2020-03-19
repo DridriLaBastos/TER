@@ -14,7 +14,7 @@ struct InitReturnType
 };
 
 /** TESTEE ET FONCTIONNE CORRECTEMENT **/
-InitReturnType initialize(const Graph& G, int lb)
+InitReturnType initialize(const Graph& G, Weight lb)
 {
 	VertexOrdering O0;	O0.reserve(G.size());
 	Clique C0;
@@ -67,7 +67,7 @@ InitReturnType initialize(const Graph& G, int lb)
 
 	for (const Vertex& v : G.getVertices())
 	{
-		int w_s = VertexSet(v->neightbors).weight() + v->w;
+		Weight w_s = VertexSet(v->neightbors).weight() + v->w;
 
 		if (w_s <= lb)
 			Gp.removeVertex(v);
@@ -76,7 +76,7 @@ InitReturnType initialize(const Graph& G, int lb)
 }
 
 //TODO: Eliminer les copies innutiles ?
-VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
+VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 {
 	VertexSet B;
 	VertexSets PI;
@@ -105,7 +105,7 @@ VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 		/** Si l'intersection est vide on test le poids **/
 		if (found != PI.end())
 		{
-			int sum = 0;
+			Weight sum = 0;
 			found->emplace_back(v);
 			std::for_each(PI.begin(), PI.end(), [&sum](const VertexSet& vs) { sum += vs.getMaxWeight(); });
 
@@ -117,7 +117,7 @@ VertexSet getBranches(const Graph& G, const int t, const VertexOrdering& O)
 		}
 		else
 		{
-			int sum = v->w;
+			Weight sum = v->w;
 			std::for_each(PI.begin(), PI.end(), [&sum](const VertexSet& vs) { sum += vs.getMaxWeight(); });
 
 			if (sum <= t)

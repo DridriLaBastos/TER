@@ -82,7 +82,7 @@ public:
 
 	Weight weight(void) const
 	{
-		int totalWeight = 0;
+		Weight totalWeight = 0;
 
 		for (const Vertex v : m_vertices)
 			totalWeight += v->w;
@@ -92,7 +92,7 @@ public:
 
 	Weight getMaxWeight(void) const
 	{
-		int max = 0;
+		Weight max = 0;
 
 		for (const Vertex v : m_vertices)
 			max = (v->w > max) ? v->w : max;
