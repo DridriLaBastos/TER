@@ -46,7 +46,7 @@ InitReturnType initialize(const Graph& G, Weight lb)
 		//U <- U\{vi} fait plus tard car on a besoin de vi ensuite
 
 		//For each neighbors v of vi: deg(v) -= 1
-		const VertexSet& neighbors = vi->v->neightbors;
+		const VertexSet& neighbors = vi->v->neighbors;
 
 		std::for_each(neighbors.begin(), neighbors.end(),
 			[&](const Vertex& neighbor)
@@ -70,7 +70,7 @@ InitReturnType initialize(const Graph& G, Weight lb)
 
 	for (const Vertex& v : G.getVertices())
 	{
-		Weight w_s = VertexSet(v->neightbors).weight() + v->w;
+		Weight w_s = VertexSet(v->neighbors).weight() + v->w;
 
 		if (w_s <= lb)
 			Gp.removeVertex(v);
@@ -93,7 +93,7 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 			[&](VertexSet& d)
 			{
 				/** test l'intersection entre les sommets déjà dans d et les voisins de v **/
-				for (const Vertex& vertex : v->neightbors)
+				for (const Vertex& vertex : v->neighbors)
 				{
 					for (size_t i = 0; i < d.size(); ++i)
 					{
@@ -151,7 +151,7 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 	{
 		const VertexSet& BSubset = B.subSet(i + 1, B.size() - 1);
 		const VertexSet& unionWithA = VertexSet::unionBetween(A, BSubset);
-		const VertexSet& neighbors = B[i]->neightbors;
+		const VertexSet& neighbors = B[i]->neighbors;
 		VertexSet P(VertexSet::intersectionBetween(neighbors, unionWithA));
 
 		if (VertexSet::unionBetween(C, B[i]).weight() + P.weight() > Cmax.weight())
@@ -176,7 +176,7 @@ Clique WLMC(const Graph& G)
 	for (size_t j = Vp.size() - 1; j < Vp.size(); --j)
 	{
 		const Vertex& vi = Vp[j];
-		VertexSet P = VertexSet::intersectionBetween(vi->neightbors, Vp.subSet(j + 1, Vp.size() - 1));
+		VertexSet P = VertexSet::intersectionBetween(vi->neighbors, Vp.subSet(j + 1, Vp.size() - 1));
 
 		if ((P.weight() + vi->w) > Cmax.weight())
 		{

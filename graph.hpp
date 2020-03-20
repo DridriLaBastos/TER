@@ -14,7 +14,7 @@ struct VertexStruct
 	unsigned int n;//Vertex number
 	Weight w;//Vertex weight
 
-	std::vector<VertexStruct*> neightbors;
+	std::vector<VertexStruct*> neighbors;
 
 	VertexStruct(const unsigned int n, const Weight w = 1) { this->n = n;   this->w = w; }
 	VertexStruct(const VertexStruct& vs) { n = vs.n; w = vs.w; std::cout << "VertexStruct copy!\n"; }
@@ -35,13 +35,13 @@ using Clique = VertexSet;
 
 static void connect(Vertex a, Vertex b)
 {
-	auto found = std::find(a->neightbors.begin(), a->neightbors.end(), b);
+	auto found = std::find(a->neighbors.begin(), a->neighbors.end(), b);
 
 	//On connect deux sommets que s'ils ne sont pas déjà connectés
-	if (found == a->neightbors.end())
+	if (found == a->neighbors.end())
 	{
-		a->neightbors.emplace_back(b);
-		b->neightbors.emplace_back(a);
+		a->neighbors.emplace_back(b);
+		b->neighbors.emplace_back(a);
 	}
 }
 
@@ -230,7 +230,7 @@ public:
 		VertexDegreePairs ret;	ret.reserve(m_vertices.size());
 
 		for (const Vertex v : m_vertices)
-			ret.emplace_back(v, v->neightbors.size());
+			ret.emplace_back(v, v->neighbors.size());
 
 		return ret;
 	}

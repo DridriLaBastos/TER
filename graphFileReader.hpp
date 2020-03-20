@@ -51,9 +51,9 @@ class GraphFileReader
 
 		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container) const
 		{
-			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut petre sûr que le container est assez grand pour contenir tous les sommets
-			if (vertexNumber >= container.capacity())
-				container.resize(container.capacity() * 2);
+			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
+			if (vertexNumber >= container.size())
+				container.resize(container.size() * 2);
 			
 			if (container[vertexNumber].get() == nullptr)
 			{
@@ -66,12 +66,16 @@ class GraphFileReader
 
 		void findEdgeFromVerticesAndEmplaceIfNot(const Vertex& v1, const Vertex&v2, Edges& edges) const
 		{
+			//Si une arête existe entre ces sommets, alors chacun des sommets à l'autre dans ses voisins. Pour vérifier
+			//si une arrête existe ou pas, il suffit donc de chercher un des sommets dans la liste des voisins de l'autre.
+			//Il n'y a pas besoin de tester les deux listes de voisins que si un sommet est dans les voisins d'un autre
+			//les deux sont forcément voisin l'un de l'autre (voir makeEdge)
 			//Wouah *_*
-			auto found = std::find_if(v1->neightbors.begin(), v1->neightbors.end(),
+			auto found = std::find_if(v1->neighbors.begin(), v1->neighbors.end(),
 				[&v2](const Vertex& vs)
 				{ return vs == v2; });
 			
-			if (found == v1->neightbors.end())
+			if (found == v1->neighbors.end())
 				edges.emplace_back(makeEdge(v1,v2));
 		}
 
