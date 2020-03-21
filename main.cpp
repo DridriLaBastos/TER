@@ -21,11 +21,14 @@ InitReturnType initialize(const Graph& G, Weight lb)
 	Graph Gp(G);//Gp = G' (G prime)
 	//Calcule le degré de chaque sommets. Contient aussi U qui est l'ensemble des sommets
 	VertexDegreePairs degrees(G.computeDegrees());
+	std::sort(degrees.begin(),degrees.end(),
+		[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.d > b.d; });
 
 	for (size_t i = 0; i < G.size(); ++i)
 	{
-		auto vi = std::min_element(degrees.begin(), degrees.end(),
-			[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.d < b.d; });
+		//auto vi = std::min_element(degrees.begin(), degrees.end(),
+		//	[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.d < b.d; });
+		const VertexDegreePair* vi = &degrees.back();
 
 		if (vi->d == degrees.size() - 1)
 		{
@@ -49,19 +52,25 @@ InitReturnType initialize(const Graph& G, Weight lb)
 		const VertexSet& neighbors = vi->v->neighbors;
 
 		std::for_each(neighbors.begin(), neighbors.end(),
-			[&](const Vertex& neighbor)
+			[&degrees](const Vertex& neighbor)
 			{
 				for (size_t i = 0; i < degrees.size(); ++i)
 				{
 					if (degrees[i].v == neighbor)
+					{
 						--degrees[i].d;
+
+						for (size_t j = i; (j < degrees.size()-2) && (degrees[j+1].d > degrees[j].d); ++j)
+							std::swap(degrees[j+1],degrees[j]);
+						
+						break;
+					}
 				}
 			});
 
 		//O0 est l'ensemble des sommets dans l'ordre avec lequel ils sont trouv�s par cette fonction
 		O0.emplace_back(vi->v);
-		//U <- U\{vi} Cette ligne arrive � la fin car on a besoin de vi avant
-		std::swap(*vi, degrees.back());
+		//U <- U\{vi} Cette ligne arrive à la fin car on a besoin de vi avant
 		degrees.pop_back();
 	}
 
