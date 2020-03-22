@@ -30,9 +30,6 @@ using VertexOrdering = Vertices;
 using Edge = std::pair<Vertex, Vertex>;
 using Edges = std::vector<Edge>;
 
-class VertexSet;
-using Clique = VertexSet;
-
 static void connect(Vertex a, Vertex b)
 {
 	auto found = std::find(a->neighbors.begin(), a->neighbors.end(), b);
@@ -185,7 +182,10 @@ public:
 private:
 	Vertices m_vertices;
 };
+
 using VertexSets = std::vector<VertexSet>;
+using Clique = VertexSet;
+using Cliques = VertexSets;
 
 class Graph
 {

@@ -172,30 +172,63 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 	return Cmax;
 }
 
-Clique WLMC(const Graph& G)
+template <> struct std::hash<Clique>
+{
+	size_t operator()(const Clique& e) const
+	{
+		size_t result = 0;
+		const std::hash<unsigned long> h;
+
+		for (const Vertex& v: e)
+			result += h((unsigned long)v);
+
+		return result;
+	}
+};
+
+Cliques WLMC(const Graph& G)
 {
 	const auto start = std::chrono::steady_clock::now();
 	InitReturnType i = initialize(G, 0);
-	Clique Cmax = i.C0;
+	Cliques Cmax = {i.C0};
 	VertexSet Vp = i.Gp.getVertexSet();
+	std::hash<Clique> cliqueHash;
 	Vp.orderWith(i.O0);
 
 	for (size_t j = Vp.size() - 1; j < Vp.size(); --j)
 	{
+		const Weight maxCliqueWeight = Cmax.back().weight();
 		const Vertex& vi = Vp[j];
 		VertexSet P = VertexSet::intersectionBetween(vi->neighbors, Vp.subSet(j + 1, Vp.size() - 1));
 
-		if ((P.weight() + vi->w) > Cmax.weight())
+		if ((P.weight() + vi->w) >= maxCliqueWeight)
 		{
-			InitReturnType ip = initialize(G[P], Cmax.weight() - vi->w);
+			InitReturnType ip = initialize(G[P], maxCliqueWeight - vi->w);
 
-			if ((ip.C0.weight() + vi->w) > Cmax.weight())
-				Cmax = VertexSet::unionBetween(ip.C0, vi);
+			if ((ip.C0.weight() + vi->w) >= maxCliqueWeight)
+			{
+				Clique newClique = VertexSet::unionBetween(ip.C0, vi);
+				if ((ip.C0.weight() + vi->w) == maxCliqueWeight)
+				{
+					if (cliqueHash(newClique) != cliqueHash(Cmax.back()))
+						Cmax.emplace_back(newClique);
+				}
+				else
+					Cmax = {newClique};
+			}
 
-			Clique Cp = searchMaxWClique(ip.Gp, Cmax, { {vi} }, ip.O0);
+			Clique Cp = searchMaxWClique(ip.Gp, Cmax.back(), { {vi} }, ip.O0);
 
-			if (Cp.weight() > Cmax.weight())
-				Cmax = Cp;
+			if (Cp.weight() >= maxCliqueWeight)
+			{
+				if (Cp.weight() == maxCliqueWeight)
+				{
+					if (cliqueHash(Cp) != cliqueHash(Cmax.back()))
+						Cmax.emplace_back(Cp);
+				}
+				else
+					Cmax = {Cp};
+			}
 		}
 	}
 	const auto end = std::chrono::steady_clock::now();
@@ -251,8 +284,10 @@ int main(int argc, const char** argv)
 			  makeEdge(&v5,&v6),   makeEdge(&v5,&v9),
 			  makeEdge(&v6,&v7),   makeEdge(&v7,&v8),   makeEdge(&v8,&v9)});*/
 
-	Clique Cmax = WLMC(Graph(pair.first,pair.second));
-	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
+	Cliques Cmax = WLMC(Graph(pair.first,pair.second));
+	std::for_each(Cmax.begin(), Cmax.end(), [](Clique& C)
+		{ std::sort(C.begin(),C.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; }); });
+	
 	std::cout << Cmax << std::endl;
 
 	return EXIT_SUCCESS;
