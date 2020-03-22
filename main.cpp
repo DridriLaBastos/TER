@@ -26,8 +26,6 @@ InitReturnType initialize(const Graph& G, Weight lb)
 
 	for (size_t i = 0; i < G.size(); ++i)
 	{
-		//auto vi = std::min_element(degrees.begin(), degrees.end(),
-		//	[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.d < b.d; });
 		const VertexDegreePair* vi = &degrees.back();
 
 		if (vi->d == degrees.size() - 1)
