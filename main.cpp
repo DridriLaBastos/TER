@@ -209,10 +209,7 @@ Cliques WLMC(const Graph& G)
 			{
 				Clique newClique = VertexSet::unionBetween(ip.C0, vi);
 				if ((ip.C0.weight() + vi->w) == maxCliqueWeight)
-				{
-					if (cliqueHash(newClique) != cliqueHash(Cmax.back()))
-						Cmax.emplace_back(newClique);
-				}
+					Cmax.emplace_back(newClique);
 				else
 					Cmax = {newClique};
 			}
@@ -222,10 +219,7 @@ Cliques WLMC(const Graph& G)
 			if (Cp.weight() >= maxCliqueWeight)
 			{
 				if (Cp.weight() == maxCliqueWeight)
-				{
-					if (cliqueHash(Cp) != cliqueHash(Cmax.back()))
-						Cmax.emplace_back(Cp);
-				}
+					Cmax.emplace_back(Cp);
 				else
 					Cmax = {Cp};
 			}
