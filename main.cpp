@@ -236,6 +236,8 @@ static void signalHandler(const int sigNum)
 
 static void setup (void)
 {
+	//_MSC_VER est une macro contenant la version du compilateur msvc utilisé par windows. On utilise cette
+	//macro pour savoir si on compile sous windows ou pas car signal n'existe pas sous windows
 #if !defined(_MSC_VER)
 	signal(SIGKILL, signalHandler);
 	signal(SIGQUIT, signalHandler);
@@ -255,25 +257,7 @@ int main(int argc, const char** argv)
 	VertexContainer container;
 
 	GraphFileReader reader (argv[1]);
-	//reader.readFile();
-
 	std::pair<Vertices, Edges> pair = reader.readFile(container);
-	/*VertexStruct v1 (1);
-	VertexStruct v2 (2);
-	VertexStruct v3 (3);
-	VertexStruct v4 (4);
-	VertexStruct v5 (5,1000);
-	VertexStruct v6 (6);
-	VertexStruct v7 (4);
-	VertexStruct v8 (8);
-	VertexStruct v9 (9,100);
-
-	Edges e ({makeEdge(&v1,&v2),   makeEdge(&v1,&v3),
-			  makeEdge(&v2,&v3),   makeEdge(&v2,&v4),   makeEdge(&v2,&v6),   makeEdge(&v2,&v7),
-			  makeEdge(&v3,&v4),   makeEdge(&v3,&v6),
-			  makeEdge(&v4,&v5),   makeEdge(&v4,&v6),
-			  makeEdge(&v5,&v6),   makeEdge(&v5,&v9),
-			  makeEdge(&v6,&v7),   makeEdge(&v7,&v8),   makeEdge(&v8,&v9)});*/
 
 	Clique Cmax = WLMC(Graph(pair.first,pair.second));
 	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
