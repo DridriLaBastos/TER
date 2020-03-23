@@ -26,6 +26,8 @@ InitReturnType initialize(const Graph& G, Weight lb)
 
 	for (size_t i = 0; i < G.size(); ++i)
 	{
+		//auto vi = std::min_element(degrees.begin(), degrees.end(),
+		//	[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.d < b.d; });
 		const VertexDegreePair* vi = &degrees.back();
 
 		if (vi->d == degrees.size() - 1)
@@ -51,18 +53,58 @@ InitReturnType initialize(const Graph& G, Weight lb)
 
 		for (const Vertex& neighbor: neighbors)
 		{
-			for (size_t i = 0; i < degrees.size(); ++i)
-			{
-				if (degrees[i].v == neighbor)
-				{
-					--degrees[i].d;
+			const unsigned int neighborDegree = neighbor->neighbors.size();
 
-					for (size_t j = i; (j < degrees.size()-2) && (degrees[j+1].d > degrees[j].d); ++j)
-						std::swap(degrees[j+1],degrees[j]);
-					
-					break;
+			size_t begin = 0;
+			size_t end = degrees.size() - 1;
+			size_t pos = 0;
+
+			do
+			{
+				if (end - begin <= 1)
+					pos = degrees[begin].v == neighbor ? begin : end;
+				else
+				{
+					pos = (begin + end) / 2;
+
+					if (degrees[pos].d < neighborDegree)
+						end = pos;
+					else if (degrees[pos].d > neighborDegree)
+						begin = pos;
+					else
+					{
+						bool found = false;
+
+						for (size_t i = pos - 1; (i < degrees.size()) && (degrees[i].d == neighborDegree);--i)
+						{
+							if (degrees[i].v == neighbor)
+							{
+								found = true;
+								pos = i;
+								break;
+							}
+						}
+
+						if (!found)
+						{
+							for (size_t i = pos + 1; (i < degrees.size()) && (degrees[i].d == neighborDegree);++i)
+							{
+								if (degrees[i].v == neighbor)
+								{
+									pos = i;
+									break;
+								}
+							}
+						}
+					}
 				}
-			}
+
+			} while (degrees[pos].v != neighbor);
+
+			--degrees[pos].d;
+			
+			for (size_t j = i; (j < degrees.size()-2) && (degrees[j+1].d > degrees[j].d); ++j)
+				std::swap(degrees[j+1],degrees[j]);
 		}
 
 		//O0 est l'ensemble des sommets dans l'ordre avec lequel ils sont trouv�s par cette fonction
@@ -171,30 +213,42 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 	return Cmax;
 }
 
-Clique WLMC(const Graph& G)
+Cliques WLMC(const Graph& G)
 {
 	const auto start = std::chrono::steady_clock::now();
 	InitReturnType i = initialize(G, 0);
-	Clique Cmax = i.C0;
+	Cliques Cmax = {i.C0};
 	VertexSet Vp = i.Gp.getVertexSet();
 	Vp.orderWith(i.O0);
 
 	for (size_t j = Vp.size() - 1; j < Vp.size(); --j)
 	{
+		const Weight currentMaxCliqueWeight = Cmax.front().weight();
 		const Vertex& vi = Vp[j];
 		VertexSet P = VertexSet::intersectionBetween(vi->neighbors, Vp.subSet(j + 1, Vp.size() - 1));
 
-		if ((P.weight() + vi->w) > Cmax.weight())
+		if ((P.weight() + vi->w) >= currentMaxCliqueWeight)
 		{
-			InitReturnType ip = initialize(G[P], Cmax.weight() - vi->w);
+			InitReturnType ip = initialize(G[P], currentMaxCliqueWeight - vi->w);
+			const Clique newClique = searchMaxWClique(ip.Gp, Cmax.back(), { {vi} }, ip.O0);
 
-			if ((ip.C0.weight() + vi->w) > Cmax.weight())
-				Cmax = VertexSet::unionBetween(ip.C0, vi);
+			if ((ip.C0.weight() + vi->w) >= currentMaxCliqueWeight)
+			{
+				if ((ip.C0.weight() + vi->w) == currentMaxCliqueWeight)
+					Cmax.emplace_back(newClique);
+				else
+					Cmax = {newClique};
+			}
 
-			Clique Cp = searchMaxWClique(ip.Gp, Cmax, { {vi} }, ip.O0);
+			Clique Cp = searchMaxWClique(ip.Gp, Cmax.back(), { {vi} }, ip.O0);
 
-			if (Cp.weight() > Cmax.weight())
-				Cmax = Cp;
+			if (Cp.weight() >= currentMaxCliqueWeight)
+			{
+				if (Cp.weight() == currentMaxCliqueWeight)
+					Cmax.emplace_back(Cp);
+				else
+					Cmax = {Cp};
+			}
 		}
 	}
 	const auto end = std::chrono::steady_clock::now();
@@ -250,8 +304,9 @@ int main(int argc, const char** argv)
 			  makeEdge(&v5,&v6),   makeEdge(&v5,&v9),
 			  makeEdge(&v6,&v7),   makeEdge(&v7,&v8),   makeEdge(&v8,&v9)});*/
 
-	Clique Cmax = WLMC(Graph(pair.first,pair.second));
-	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
+	Cliques Cmax = WLMC(Graph(pair.first,pair.second));
+	for (Clique& C: Cmax)
+		std::sort(C.begin(),C.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
 	std::cout << Cmax << std::endl;
 
 	return EXIT_SUCCESS;

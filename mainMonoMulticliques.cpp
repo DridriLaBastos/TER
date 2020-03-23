@@ -51,22 +51,21 @@ InitReturnType initialize(const Graph& G, Weight lb)
 		//For each neighbors v of vi: deg(v) -= 1
 		const VertexSet& neighbors = vi->v->neighbors;
 
-		std::for_each(neighbors.begin(), neighbors.end(),
-			[&degrees](const Vertex& neighbor)
+		for (const Vertex& neighbor: neighbors)
+		{
+			for (size_t i = 0; i < degrees.size(); ++i)
 			{
-				for (size_t i = 0; i < degrees.size(); ++i)
+				if (degrees[i].v == neighbor)
 				{
-					if (degrees[i].v == neighbor)
-					{
-						--degrees[i].d;
+					--degrees[i].d;
 
-						for (size_t j = i; (j < degrees.size()-2) && (degrees[j+1].d > degrees[j].d); ++j)
-							std::swap(degrees[j+1],degrees[j]);
-						
-						break;
-					}
+					for (size_t j = i; (j < degrees.size()-2) && (degrees[j+1].d > degrees[j].d); ++j)
+						std::swap(degrees[j+1],degrees[j]);
+					
+					break;
 				}
-			});
+			}
+		}
 
 		//O0 est l'ensemble des sommets dans l'ordre avec lequel ils sont trouv�s par cette fonction
 		O0.emplace_back(vi->v);
