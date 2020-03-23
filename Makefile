@@ -1,13 +1,13 @@
 CXXSRC = $(wildcard *.cpp)
 CXXHEADER = $(wildcard *.hpp)
-EXEC = $(CXXSRC:.cpp=.out)
+EXEC = wlmc.out
 
 .PHONY: clean
 
 all: $(EXEC)
 
-%.out : %.cpp $(CXXHEADER)
-	$(CXX) $(CPPFLAGS) --std=c++11 -W -Wextra -O3 $< -o $@
+$(EXEC) : $(CXXSRC) $(CXXHEADER)
+	$(CXX) $(CPPFLAGS) --std=c++11 -W -Wextra -O3 $(CXXSRC) -o $@
 
 clean:
 	rm $(EXEC)

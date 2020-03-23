@@ -13,5 +13,5 @@ Résultats par rapport à notre implémentation pour des graphs de http://networ
  - bio-grid-fruitfly : segmentation fault (notre programme met encore trop de temps pour lire)
  - bio-grid-human : pareil
  - bio-grid-mouse : pareil
- - bio-yeast-protein-inter : même résultat : un sommet de plus que sur le site
+ - bio-yeast-protein-inter : même résultat : un sommet de plus que sur le site (on va corriger un siter officiel mwhahahahahahahaha)
  - bio-yeast : pareil

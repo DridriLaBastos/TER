@@ -203,6 +203,31 @@ Clique WLMC(const Graph& G)
 	return Cmax;
 }
 
+static bool isClique (const Clique& c, const Edges& edges)
+{
+	for (size_t i = 0; i < c.size(); ++i)
+	{
+		for (size_t j = i+1; j < c.size(); ++j)
+		{
+			bool found = false;
+
+			for (const Edge& e: edges)
+			{
+				if (((e.first == c[i]) && (e.second == c[j])) || 
+					((e.first == c[j]) && (e.second == c[i])))
+				{
+					found = true;
+					break;
+				}
+			}
+
+			if (!found) return false;
+		}
+	}
+
+	return true;
+}
+
 static void signalHandler(const int sigNum)
 {
 	std::cerr << "Exiting with signal: " << sigNum << std::endl;
@@ -253,6 +278,7 @@ int main(int argc, const char** argv)
 	Clique Cmax = WLMC(Graph(pair.first,pair.second));
 	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
 	std::cout << Cmax << std::endl;
+	std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
 
 	return EXIT_SUCCESS;
 }
