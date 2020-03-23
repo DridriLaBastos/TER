@@ -126,19 +126,18 @@ public:
 
 	void remove(const VertexSet& V)
 	{
-		std::for_each(V.begin(), V.end(),
-			[&](const Vertex v)
+		for (const Vertex& v: V)
+		{
+			for (size_t i = 0; i < m_vertices.size(); ++i)
 			{
-				for (size_t i = 0; i < m_vertices.size(); ++i)
+				if (m_vertices[i] == v)
 				{
-					if (m_vertices[i] == v)
-					{
-						std::swap(m_vertices[i], m_vertices.back());
-						m_vertices.pop_back();
-						break;
-					}
+					std::swap(m_vertices[i], m_vertices.back());
+					m_vertices.pop_back();
+					break;
 				}
-			});
+			}
+		}
 	}
 
 	size_t size(void) const { return m_vertices.size(); }
@@ -159,23 +158,22 @@ public:
 	static VertexSet unionBetween(const VertexSet& V1, const VertexSet& V2)
 	{
 		VertexSet finalUnion(V1);
-		std::for_each(V2.begin(), V2.end(),
-			[&](const Vertex& v) { finalUnion = unionBetween(finalUnion, v); });
+		for (const Vertex& v: V2)
+			finalUnion = unionBetween(finalUnion, v);
 		return finalUnion;
 	}
 
 	static VertexSet intersectionBetween(const VertexSet& V1, const VertexSet& V2)
 	{
 		VertexSet finalIntersection;
-		std::for_each(V1.begin(), V1.end(),
-			[&](const Vertex& v)
+		for (const Vertex& v: V1)
+		{
+			for (size_t i = 0; i < V2.size(); ++i)
 			{
-				for (size_t i = 0; i < V2.size(); ++i)
-				{
-					if (V2[i] == v)
-						finalIntersection.emplace_back(v);
-				}
-			});
+				if (V2[i] == v)
+					finalIntersection.emplace_back(v);
+			}
+		}
 		return finalIntersection;
 	}
 
@@ -200,27 +198,26 @@ public:
 		ret.m_vertices = V.getVertices();
 		Edges E;
 
-		std::for_each(m_edges.begin(), m_edges.end(),
-			[&](const Edge& e)
-			{
-				bool findFirst = false;
-				bool findSecond = false;
+		for(const Edge& e: m_edges)
+		{
+			bool findFirst = false;
+			bool findSecond = false;
 
-				for (size_t i = 0; i < V.size(); ++i)
+			for (size_t i = 0; i < V.size(); ++i)
+			{
+				if (V[i] == e.first)
+					findFirst = true;
+			
+				if (V[i] == e.second)
+					findSecond = true;
+			
+				if (findFirst && findSecond)
 				{
-					if (V[i] == e.first)
-						findFirst = true;
-				
-					if (V[i] == e.second)
-						findSecond = true;
-				
-					if (findFirst && findSecond)
-					{
-						ret.m_edges.emplace_back(e);
-						break;
-					}
+					ret.m_edges.emplace_back(e);
+					break;
 				}
-			});
+			}
+		}
 
 		return ret;
 	}
