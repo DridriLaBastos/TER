@@ -83,10 +83,12 @@ class GraphFileReader
 		{
 			unsigned int n1 = 0;
 			unsigned int n2 = 0;
+			char line [127];
 
 			//A priori le fichier n'est pas trié, il n'y a donc aucune garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
-			m_stream >> n1 >> n2;
+			m_stream.getline(line,127);
+			extractUInt(line,n1,n2);
 			
 			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
 			const Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
@@ -96,6 +98,30 @@ class GraphFileReader
 			//qu'une arrête ne soit pas mise deux fois (par exemple (1,0) et (0,1) sont la même arrête et on
 			//ne veut pas la mettre deux fois)
 			findEdgeFromVerticesAndEmplaceIfNot(v1,v2,pair.second);
+		}
+
+	private:
+		static void extractUInt(const char* str, unsigned int& n1, unsigned int& n2)
+		{
+			//exctraction du premier nombre
+			while (std::isdigit(*str))
+			{
+				n1 *= 10;
+				n1 += *str - '0';
+				++str;
+			}
+
+			//On va jusqu'au deuxième
+			while (!std::isdigit(*str))
+				++str;
+			
+			//Extraction du deuxième nombre
+			while (std::isdigit(*str))
+			{
+				n2 *= 10;
+				n2 += *str - '0';
+				++str;
+			}
 		}
 
 	private:

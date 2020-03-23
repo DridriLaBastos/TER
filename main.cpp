@@ -277,7 +277,7 @@ int main(int argc, const char** argv)
 
 	Clique Cmax = WLMC(Graph(pair.first,pair.second));
 	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
-	std::cout << Cmax << std::endl;
+	std::cout << Cmax << " weight: " << Cmax.weight() << std::endl;
 	std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
 
 	return EXIT_SUCCESS;
