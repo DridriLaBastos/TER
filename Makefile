@@ -1,11 +1,13 @@
 CXXSRC = $(wildcard *.cpp)
 CXXHEADER = $(wildcard *.hpp)
-EXEC = wlmc.out
+EXEC = $(CXXSRC:.cpp=.out)
 
-.PHONY: deb
+.PHONY: clean
 
-$(EXEC) : $(CXXSRC) $(CXXHEADER)
-	$(CXX) $(CPPFLAGS) --std=c++11 -W -Wextra -O3 $(CXXSRC) -o $@
+all: $(EXEC)
 
-deb : $(EXEC)
-	lldb $ ^
+%.out : %.cpp $(CXXHEADER)
+	$(CXX) $(CPPFLAGS) --std=c++11 -W -Wextra -O3 $< -o $@
+
+clean:
+	rm $(EXEC)
