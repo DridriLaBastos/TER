@@ -343,7 +343,7 @@ private:
 	}
 
 private:
-	Edges		m_edges;//Les arr�tes
+	Edges		m_edges;//Les arrêtes
 	Vertices	m_vertices;//Les sommets
 };
 
