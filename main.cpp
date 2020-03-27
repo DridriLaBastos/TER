@@ -4,7 +4,7 @@
 #include <signal.h>
 
 #include "graph.hpp"
-#include "graphFileReader.hpp"
+//#include "graphFileReader.hpp"
 
 struct InitReturnType
 {
@@ -84,7 +84,6 @@ InitReturnType initialize(const Graph& G, Weight lb)
 	return { C0, O0, Gp };
 }
 
-//TODO: Eliminer les copies innutiles ?
 VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 {
 	VertexSet B;
@@ -95,7 +94,7 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 	{
 		const Vertex& v = V[i];
 
-		const auto found = std::find_if(PI.begin(), PI.end(),
+		const auto found = std::find_if(PI.set.begin(), PI.set.end(),
 			[&](VertexSet& d)
 			{
 				/** test l'intersection entre les sommets déjà dans d et les voisins de v **/
@@ -112,13 +111,13 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 			});
 
 		/** Si l'intersection est vide on test le poids **/
-		if (found != PI.end())
+		if (found != PI.set.end())
 		{
-			Weight sum = 0;
+			Weights sum;
 			found->emplace_back(v);
-			std::for_each(PI.begin(), PI.end(), [&sum](const VertexSet& vs) { sum += vs.getMaxWeight(); });
+			std::for_each(PI.set.begin(), PI.set.end(), [&sum](const VertexSet& vs) { tryInsertAndRemoveDominated(vs.weight(),sum); });
 
-			if (sum > t)
+			if (t <= sum)
 			{
 				found->pop_back();
 				B.emplace_back(v);
@@ -126,13 +125,13 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 		}
 		else
 		{
-			Weight sum = v->w;
-			std::for_each(PI.begin(), PI.end(), [&sum](const VertexSet& vs) { sum += vs.getMaxWeight(); });
+			Weights sum = { v->w };
+			std::for_each(PI.set.begin(), PI.set.end(), [&sum](const VertexSet& vs) { tryInsertAndRemoveDominated(vs.weight(),sum); });
 
-			if (sum <= t)
-				PI.emplace_back(Vertices{ v });
-			else
+			if (t <= sum)
 				B.emplace_back(v);
+			else
+				PI.set.emplace_back(Vertices{ v });
 		}
 	}
 
@@ -171,11 +170,11 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 	return Cmax;
 }
 
-Clique WLMC(const Graph& G)
+Cliques WLMC(const Graph& G)
 {
 	const auto start = std::chrono::steady_clock::now();
-	InitReturnType i = initialize(G, 0);
-	Clique Cmax = i.C0;
+	InitReturnType i = initialize(G, {});
+	Cliques Cmax;   Cmax.set = { i.C0 };
 	VertexSet Vp = i.Gp.getVertexSet();
 	Vp.orderWith(i.O0);
 
@@ -184,17 +183,47 @@ Clique WLMC(const Graph& G)
 		const Vertex& vi = Vp[j];
 		VertexSet P = VertexSet::intersectionBetween(vi->neighbors, Vp.subSet(j + 1, Vp.size() - 1));
 
-		if ((P.weight() + vi->w) > Cmax.weight())
+		bool cliqueToImproveFound = false;
+		Clique cliqueToImprove;
+
+		//On cherche une clique qui pourrait potentiellement être moins bonne, si on la trouve
+		//on la sauvegarde pour l'utiliser. Il y a un bug ici si Cmax est vide mais ce n'est jamais le cas
+		//tel qu'est écris l'algorithme
+		for (size_t i = 0; i < Cmax.set.size(); ++i)
 		{
-			InitReturnType ip = initialize(G[P], Cmax.weight() - vi->w);
+			if (!((P.weight() + vi->w) <= Cmax.set[i].weight()))
+			{
+				cliqueToImproveFound = true;
+				cliqueToImprove = Cmax.set[i];
+				break;
+			}
+		}
 
-			if ((ip.C0.weight() + vi->w) > Cmax.weight())
-				Cmax = VertexSet::unionBetween(ip.C0, vi);
+		//On entre ici s'il existe une clique à améliorer
+		if (cliqueToImproveFound)
+		{
+			InitReturnType ip = initialize(G[P], cliqueToImprove.weight() - vi->w);
 
-			Clique Cp = searchMaxWClique(ip.Gp, Cmax, { {vi} }, ip.O0);
+			if ((ip.C0.weight() + vi->w) > cliqueToImprove.weight())
+				cliqueToImprove = VertexSet::unionBetween(ip.C0, vi);
 
-			if (Cp.weight() > Cmax.weight())
-				Cmax = Cp;
+			Clique Cp = searchMaxWClique(ip.Gp, cliqueToImprove, { {vi} }, ip.O0);
+
+			if (Cp.weight() > cliqueToImprove.weight())
+				cliqueToImprove = Cp;
+			
+			//Maintenant que l'on a remplacé l'ancienne clique par une meilleure, on regarde si cette nouvelle clique
+			//en domine d'autres pour les supprimer de l'ensemble des cliques max
+			for (size_t i = 0; i < Cmax.set.size(); ++i)
+			{
+				if (cliqueToImprove.weight() > Cmax.set[i].weight())
+				{
+					std::swap(Cmax.set[i],Cmax.set.back());
+					Cmax.set.pop_back();
+				}
+			}
+
+			Cmax.set.emplace_back(cliqueToImprove);
 		}
 	}
 	const auto end = std::chrono::steady_clock::now();
@@ -247,22 +276,39 @@ static void setup (void)
 
 int main(int argc, const char** argv)
 {
-	if (argc != 2)
+	/*if (argc != 2)
 	{
 		std::cerr << "arguments are <file path>\n";
 		return EXIT_FAILURE;
-	}
+	}*/
 
 	setup();
 	VertexContainer container;
+	container.emplace_back(new VertexStruct(1,{10, 1}));
+	container.emplace_back(new VertexStruct(2,{10, 1}));
+	container.emplace_back(new VertexStruct(3,{1, 10}));
+	container.emplace_back(new VertexStruct(4,{1, 15}));
 
-	GraphFileReader reader (argv[1]);
-	std::pair<Vertices, Edges> pair = reader.readFile(container);
+	std::pair<Vertices, Edges> pair;
+	pair.first.resize(container.size());
 
-	Clique Cmax = WLMC(Graph(pair.first,pair.second));
-	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
-	std::cout << Cmax << " weight: " << Cmax.weight() << std::endl;
-	std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
+	for (size_t i = 0; i < container.size(); ++i)
+		pair.first[i] = container[i].get();
+	
+	pair.second.emplace_back(makeEdge(pair.first[2],pair.first[0]));
+	pair.second.emplace_back(makeEdge(pair.first[2],pair.first[1]));
+	pair.second.emplace_back(makeEdge(pair.first[2],pair.first[3]));
+	pair.second.emplace_back(makeEdge(pair.first[0],pair.first[1]));
+
+	/*GraphFileReader reader (argv[1]);
+	std::pair<Vertices, Edges> pair = reader.readFile(container);*/
+
+	Cliques Cmax = WLMC(Graph(pair.first,pair.second));
+
+	for (Clique& c: Cmax.set)
+		std::sort(c.begin(),c.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
+	std::cout << Cmax << std::endl;
+	//std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
 
 	return EXIT_SUCCESS;
 }

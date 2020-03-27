@@ -1,22 +1,26 @@
 #ifndef GRAPH_HPP
 #define GRAPH_HPP
 
+#include <array>
 #include <vector>
 #include <memory>
 #include <utility>
 #include <iostream>
 #include <algorithm>
 
-using Weight = float;
+constexpr size_t WEIGHTS_SIZE = 2;
+
+using Weight = std::array<int,WEIGHTS_SIZE>;
+using Weights = std::vector<Weight>;
 
 struct VertexStruct
 {
 	unsigned int n;//Vertex number
-	Weight w;//Vertex weight
+	Weight w;//Vertex weights
 
 	std::vector<VertexStruct*> neighbors;
 
-	VertexStruct(const unsigned int n, const Weight w = 1) { this->n = n;   this->w = w; }
+	VertexStruct(const unsigned int n, const Weight w = {1,1}) { this->n = n;   this->w = w; }
 	VertexStruct(const VertexStruct& vs) { n = vs.n; w = vs.w; std::cout << "VertexStruct copy!\n"; }
 };
 
@@ -56,7 +60,68 @@ struct VertexDegreePair
 	VertexDegreePair(const Vertex& ver, const unsigned int d) : v(ver) { this->d = d; }
 };
 
+bool tryInsertAndRemoveDominated(const Weight& w, Weights& weights)
+{
+	bool addVertexWeight = true;
+	
+	for (size_t i = 0; i < weights.size(); ++i)
+	{
+		//Si le poids du sommet n'est pas plus petit que le poids que l'on teste parmis l'ensemble des
+		//poids max, on ajoute le poids du sommet.
+		//Mais si le poids du sommet est strictement supérieur à celui que l'on teste parmis l'ensemble
+		//des poids max, alors on enlève ce poids car il est dominé par celui du sommet
+		if (!(w <= weights[i]))
+		{
+			if (addVertexWeight)
+			{
+				weights.emplace_back(w);
+				addVertexWeight = false;
+			}
+
+			if (w > weights[i])
+			{
+				std::swap(weights.back(),weights[i]);
+				weights.pop_back();
+			}
+		}
+	}
+
+	//Si addVertexWeight vaut true, ça veut dire que l'on a pas ajouté le sommet la fonction renvoie donc
+	//false, et inversement si addVertexWeight vaut true
+	return !addVertexWeight;
+}
+
 using VertexDegreePairs = std::vector<VertexDegreePair>;
+
+Weight& operator+= (Weight& w1, const Weight& w2)
+{
+	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
+		w1[i] += w2[i];
+	
+	return w1;
+}
+
+Weight operator+ (const Weight& w1, const Weight& w2)
+{
+	Weight w (w1);
+	w += w2;
+	return w;
+}
+
+Weight& operator-= (Weight& w1, const Weight& w2)
+{
+	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
+		w1[i] -= w2[i];
+	
+	return w1;
+}
+
+Weight operator- (const Weight& w1, const Weight& w2)
+{
+	Weight w (w1);
+	w -= w2;
+	return w;
+}
 
 class VertexSet
 {
@@ -77,9 +142,10 @@ public:
 	Vertices::iterator end(void) { return m_vertices.end(); }
 	Vertices::const_iterator end(void) const { return m_vertices.end(); }
 
+	//Retourne le poids total de l'ensemble de sommet
 	Weight weight(void) const
 	{
-		Weight totalWeight = 0;
+		Weight totalWeight = {0,0};
 
 		for (const Vertex v : m_vertices)
 			totalWeight += v->w;
@@ -87,13 +153,15 @@ public:
 		return totalWeight;
 	}
 
-	Weight getMaxWeight(void) const
+	//Retourne le poids max
+	Weights getMaxWeights(void) const
 	{
-		Weight max = 0;
+		Weights WMax;
 
 		for (const Vertex v : m_vertices)
-			max = (v->w > max) ? v->w : max;
-		return max;
+			tryInsertAndRemoveDominated(v->w, WMax);
+		
+		return WMax;
 	}
 
 	//TODO: améliorer le O(n^2)
@@ -181,7 +249,20 @@ private:
 	Vertices m_vertices;
 };
 
-using VertexSets = std::vector<VertexSet>;
+struct VertexSets
+{
+	std::vector<VertexSet> set;
+	Weights getWeights(void) const
+	{
+		Weights ret;
+		
+		for (const VertexSet& s: set)
+			ret.emplace_back(s.weight());
+
+		return ret;
+	}
+};
+
 using Clique = VertexSet;
 using Cliques = VertexSets;
 
@@ -347,10 +428,54 @@ private:
 	Vertices	m_vertices;//Les sommets
 };
 
+bool operator<= (const Weight& w1, const Weight& w2)
+{
+	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
+	{
+		if (w1[i] > w2[i])
+			return false;
+	}
+
+	return true;
+}
+
+bool operator<= (const Weight& w, const Weights& weights)
+{
+	for (const Weight& W: weights)
+	{
+		if (!(w <= W))
+			return false;
+	}
+
+	return true;
+}
+
+bool operator>(const Weight& w1, const Weight& w2)
+{
+	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
+	{
+		if (w1[i] <= w2[i])
+			return false;
+	}
+
+	return true;
+}
+
+std::ostream& operator<< (std::ostream& stream, const Weight& w)
+{
+	stream << "{" << w[0];
+
+	for (size_t i = 1; i < WEIGHTS_SIZE; ++i)
+		stream << " " << w[i];
+	
+	stream << "}";
+	return stream;
+}
+
 std::ostream& operator<< (std::ostream& stream, const Vertex& v)
 {
-	stream << "(" << v->n << ", " << v->w << ")";
-	return stream;
+	stream << "(" << v->n << " " << v->w << ")";
+ 	return stream;
 }
 
 std::ostream& operator<< (std::ostream& stream, const Edge& edge)
@@ -364,15 +489,17 @@ std::ostream& operator<< (std::ostream& stream, const VertexSet& vs)
 	std::cout << "{ ";
 	for (size_t i = 0; i < vs.size(); ++i)
 		std::cout << vs[i] << " ";
-	std::cout << "}";
+	std::cout << "}   weight: " << vs.weight();
 
 	return stream;
 }
 
-std::ostream& operator<< (std::ostream& stream, const VertexSets& VS)
+std::ostream& operator<< (std::ostream& stream, const VertexSets& vs)
 {
-	for (const VertexSet& vs : VS)
-		stream << vs << std::endl;
+	for (size_t i = 0; i < vs.set.size() - 1; ++i)
+		stream << vs.set[i] << std::endl;
+
+	stream << vs.set[vs.set.size() - 1];
 
 	return stream;
 }
