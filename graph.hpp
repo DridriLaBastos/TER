@@ -227,7 +227,7 @@ public:
 		VertexDegreePairs ret;	ret.reserve(m_vertices.size());
 
 		for (const Vertex v : m_vertices)
-			ret.emplace_back(v, v->neighbors.size());
+			ret.emplace_back(v, computeDegreeForVertex(v));
 
 		return ret;
 	}
