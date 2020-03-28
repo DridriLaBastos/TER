@@ -47,7 +47,7 @@ InitReturnType initialize(const Graph& G, Weight lb)
 		//U <- U\{vi} fait plus tard car on a besoin de vi ensuite
 
 		//For each neighbors v of vi: deg(v) -= 1
-		const VertexSet& neighbors = vi->v->neighbors;
+		const VertexSet& neighbors = G.getNeighborsOf(vi->v);
 
 		for (const Vertex& neighbor: neighbors)
 		{
@@ -76,7 +76,7 @@ InitReturnType initialize(const Graph& G, Weight lb)
 
 	for (const Vertex& v : G.getVertices())
 	{
-		Weight w_s = VertexSet(v->neighbors).weight() + v->w;
+		Weight w_s = VertexSet(G.getNeighborsOf(v)).weight() + v->w;
 
 		if (w_s <= lb)
 			Gp.removeVertex(v);
@@ -98,7 +98,7 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 			[&](VertexSet& d)
 			{
 				/** test l'intersection entre les sommets déjà dans d et les voisins de v **/
-				for (const Vertex& vertex : v->neighbors)
+				for (const Vertex& vertex : G.getNeighborsOf(v))
 				{
 					for (size_t i = 0; i < d.size(); ++i)
 					{
@@ -156,7 +156,7 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 	{
 		const VertexSet& BSubset = B.subSet(i + 1, B.size() - 1);
 		const VertexSet& unionWithA = VertexSet::unionBetween(A, BSubset);
-		const VertexSet& neighbors = B[i]->neighbors;
+		const VertexSet& neighbors = G.getNeighborsOf(B[i]);
 		VertexSet P(VertexSet::intersectionBetween(neighbors, unionWithA));
 
 		if (!(VertexSet::unionBetween(C, B[i]).weight() + P.weight() <= Cmax.weight()))
@@ -187,8 +187,7 @@ Cliques WLMC(const Graph& G)
 		Clique cliqueToImprove;
 
 		//On cherche une clique qui pourrait potentiellement être moins bonne, si on la trouve
-		//on la sauvegarde pour l'utiliser. Il y a un bug ici si Cmax est vide mais ce n'est jamais le cas
-		//tel qu'est écris l'algorithme
+		//on la sauvegarde pour l'utiliser.
 		for (size_t i = 0; i < Cmax.set.size(); ++i)
 		{
 			if (!((P.weight() + vi->w) <= Cmax.set[i].weight()))
@@ -202,7 +201,10 @@ Cliques WLMC(const Graph& G)
 		//On entre ici s'il existe une clique à améliorer
 		if (cliqueToImproveFound)
 		{
-			InitReturnType ip = initialize(G[P], cliqueToImprove.weight() - vi->w);
+			const Weight cliqueToImproveWeight = cliqueToImprove.weight();
+			const Weight viWeight = vi->w;
+
+			InitReturnType ip = initialize(G[P], cliqueToImproveWeight - viWeight);
 
 			if (!((ip.C0.weight() + vi->w) <= cliqueToImprove.weight()))
 				cliqueToImprove = VertexSet::unionBetween(ip.C0, vi);
@@ -212,18 +214,33 @@ Cliques WLMC(const Graph& G)
 			if (!(Cp.weight() <= cliqueToImprove.weight()))
 				cliqueToImprove = Cp;
 			
-			//Maintenant que l'on a remplacé l'ancienne clique par une meilleure, on regarde si cette nouvelle clique
-			//en domine d'autres pour les supprimer de l'ensemble des cliques max
-			for (size_t i = 0; i < Cmax.set.size(); ++i)
+			//Maintenant que l'on a remplacé l'ancienne clique par une meilleure, on vérifie que cette clique n'est dominée par aucune autres cliques de l'ensemble. Si c'est le cas
+			//(ou si la clique est de même poids), on l'oublie
+			bool keepClique = true;
+			for (const Clique& c : Cmax.set)
 			{
-				if (cliqueToImprove.weight() > Cmax.set[i].weight())
+				if (cliqueToImprove.weight() <= c.weight())
 				{
-					std::swap(Cmax.set[i],Cmax.set.back());
-					Cmax.set.pop_back();
+					keepClique = false;
+					break;
 				}
 			}
 
-			Cmax.set.emplace_back(cliqueToImprove);
+			//Sinon, on supprime toutes les cliques dominées par cette nouvelle clique, puis on l'ajoute à l'ensemble des solutions
+			if (keepClique)
+			{
+				for (size_t i = 0; i < Cmax.set.size(); ++i)
+				{
+					if (cliqueToImprove.weight() > Cmax.set[i].weight())
+					{
+						std::swap(Cmax.set[i],Cmax.set.back());
+						Cmax.set.pop_back();
+					}
+				}
+
+				Cmax.set.emplace_back(cliqueToImprove);
+			}
+
 		}
 	}
 	const auto end = std::chrono::steady_clock::now();
@@ -301,9 +318,9 @@ int main(int argc, const char** argv)
 	pair.first.emplace_back(v2.get());
 	pair.first.emplace_back(v3.get());
 	pair.first.emplace_back(v4.get());
-	//pair.first.emplace_back(v5.get());
-	//pair.first.emplace_back(v6.get());
-	//pair.first.emplace_back(v7.get());
+	pair.first.emplace_back(v5.get());
+	pair.first.emplace_back(v6.get());
+	pair.first.emplace_back(v7.get());
 	//pair.first.emplace_back(v8.get());
 	//pair.first.emplace_back(v9.get());
 	//pair.first.emplace_back(v10.get());

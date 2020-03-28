@@ -306,6 +306,21 @@ public:
 		return ret;
 	}
 
+	VertexSet getNeighborsOf(const Vertex& vi) const
+	{
+		VertexSet neighbors;
+
+		for (const Edge& e : m_edges)
+		{
+			if (e.first == vi)
+				neighbors.emplace_back(e.second);
+			else if (e.second == vi)
+				neighbors.emplace_back(e.first);
+		}
+
+		return neighbors;
+	}
+
 	VertexDegreePairs computeDegrees(void) const
 	{
 		VertexDegreePairs ret;	ret.reserve(m_vertices.size());
