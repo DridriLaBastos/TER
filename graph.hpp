@@ -310,8 +310,31 @@ public:
 	{
 		VertexDegreePairs ret;	ret.reserve(m_vertices.size());
 
-		for (const Vertex v : m_vertices)
-			ret.emplace_back(v, v->neighbors.size());
+		for (const Edge e : m_edges)
+		{
+			bool firstFound = false;
+			bool secondFound = false;
+
+			for (VertexDegreePair& pair: ret)
+			{
+				if (pair.v == e.first)
+				{
+					firstFound = true;
+					pair.d += 1;
+				}
+				else if (pair.v == e.second)
+				{
+					secondFound = true;
+					pair.d += 1;
+				}
+			}
+
+			if (!firstFound)
+				ret.emplace_back(e.first,1);
+			
+			if (!secondFound)
+				ret.emplace_back(e.second,1);
+		}
 
 		return ret;
 	}

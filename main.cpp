@@ -288,9 +288,9 @@ int main(int argc, const char** argv)
 	std::unique_ptr<VertexStruct> v2 (new VertexStruct(2,{30,20}));
 	std::unique_ptr<VertexStruct> v3 (new VertexStruct(3,{10,20}));
 	std::unique_ptr<VertexStruct> v4 (new VertexStruct(4,{1,30}));
-	std::unique_ptr<VertexStruct> v5 (new VertexStruct(4,{2,30}));
+	std::unique_ptr<VertexStruct> v5 (new VertexStruct(5,{2,30}));
 
-	std::unique_ptr<VertexStruct> v6 (new VertexStruct(1,{2,30}));
+	std::unique_ptr<VertexStruct> v6 (new VertexStruct(6,{2,30}));
 	//std::unique_ptr<VertexStruct> v7 (new VertexStruct(2,{300,1,1}));
 	//std::unique_ptr<VertexStruct> v8 (new VertexStruct(3,{100,3,1}));
 	//std::unique_ptr<VertexStruct> v9 (new VertexStruct(4,{1,10,100}));
