@@ -284,14 +284,14 @@ int main(int argc, const char** argv)
 
 	setup();
 	VertexContainer container;
-	std::unique_ptr<VertexStruct> v1 (new VertexStruct(1,{40,10}));
-	std::unique_ptr<VertexStruct> v2 (new VertexStruct(2,{30,20}));
-	std::unique_ptr<VertexStruct> v3 (new VertexStruct(3,{10,20}));
-	std::unique_ptr<VertexStruct> v4 (new VertexStruct(4,{1,30}));
-	std::unique_ptr<VertexStruct> v5 (new VertexStruct(5,{2,30}));
+	std::unique_ptr<VertexStruct> v1 (new VertexStruct(1,{10,1}));
+	std::unique_ptr<VertexStruct> v2 (new VertexStruct(2,{20,5}));
+	std::unique_ptr<VertexStruct> v3 (new VertexStruct(3,{20,4}));
+	std::unique_ptr<VertexStruct> v4 (new VertexStruct(4,{0,31}));
+	std::unique_ptr<VertexStruct> v5 (new VertexStruct(5,{5,40}));
 
-	std::unique_ptr<VertexStruct> v6 (new VertexStruct(6,{2,10}));
-	std::unique_ptr<VertexStruct> v7 (new VertexStruct(7,{15,100}));
+	std::unique_ptr<VertexStruct> v6 (new VertexStruct(6,{5,30}));
+	std::unique_ptr<VertexStruct> v7 (new VertexStruct(7,{5,9}));
 	std::unique_ptr<VertexStruct> v8 (new VertexStruct(8,{20,100}));
 	std::unique_ptr<VertexStruct> v9 (new VertexStruct(9,{35,100}));
 	std::unique_ptr<VertexStruct> v10 (new VertexStruct(10,{40,100}));
@@ -301,27 +301,30 @@ int main(int argc, const char** argv)
 	pair.first.emplace_back(v2.get());
 	pair.first.emplace_back(v3.get());
 	pair.first.emplace_back(v4.get());
-	pair.first.emplace_back(v5.get());
-	pair.first.emplace_back(v6.get());
-	pair.first.emplace_back(v7.get());
-	pair.first.emplace_back(v8.get());
-	pair.first.emplace_back(v9.get());
-	pair.first.emplace_back(v10.get());
+	//pair.first.emplace_back(v5.get());
+	//pair.first.emplace_back(v6.get());
+	//pair.first.emplace_back(v7.get());
+	//pair.first.emplace_back(v8.get());
+	//pair.first.emplace_back(v9.get());
+	//pair.first.emplace_back(v10.get());
 	
 	pair.second.emplace_back(makeEdge(v1.get(),v2.get()));
-	pair.second.emplace_back(makeEdge(v3.get(),v1.get()));
-	pair.second.emplace_back(makeEdge(v3.get(),v2.get()));
+	pair.second.emplace_back(makeEdge(v1.get(),v3.get()));
+	pair.second.emplace_back(makeEdge(v1.get(),v5.get()));
+	pair.second.emplace_back(makeEdge(v1.get(),v7.get()));
+	pair.second.emplace_back(makeEdge(v2.get(),v3.get()));
+	pair.second.emplace_back(makeEdge(v2.get(),v4.get()));
 	pair.second.emplace_back(makeEdge(v3.get(),v4.get()));
-	pair.second.emplace_back(makeEdge(v4.get(),v5.get()));
-	pair.second.emplace_back(makeEdge(v4.get(),v6.get()));
+	pair.second.emplace_back(makeEdge(v3.get(),v6.get()));
 	pair.second.emplace_back(makeEdge(v5.get(),v6.get()));
-	pair.second.emplace_back(makeEdge(v6.get(),v7.get()));
-	pair.second.emplace_back(makeEdge(v7.get(),v10.get()));
-	pair.second.emplace_back(makeEdge(v7.get(),v8.get()));
-	pair.second.emplace_back(makeEdge(v7.get(),v9.get()));
-	pair.second.emplace_back(makeEdge(v8.get(),v9.get()));
-	pair.second.emplace_back(makeEdge(v8.get(),v10.get()));
-	pair.second.emplace_back(makeEdge(v9.get(),v10.get()));
+	pair.second.emplace_back(makeEdge(v5.get(),v7.get()));
+	//pair.second.emplace_back(makeEdge(v6.get(),v7.get()));
+	//pair.second.emplace_back(makeEdge(v7.get(),v10.get()));
+	//pair.second.emplace_back(makeEdge(v7.get(),v8.get()));
+	//pair.second.emplace_back(makeEdge(v7.get(),v9.get()));
+	//pair.second.emplace_back(makeEdge(v8.get(),v9.get()));
+	//pair.second.emplace_back(makeEdge(v8.get(),v10.get()));
+	//pair.second.emplace_back(makeEdge(v9.get(),v10.get()));
 
 	/*GraphFileReader reader (argv[1]);
 	std::pair<Vertices, Edges> pair = reader.readFile(container);*/
