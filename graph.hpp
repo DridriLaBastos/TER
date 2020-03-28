@@ -20,7 +20,7 @@ struct VertexStruct
 
 	std::vector<VertexStruct*> neighbors;
 
-	VertexStruct(const unsigned int n, const Weight w = {1,1}) { this->n = n;   this->w = w; }
+	VertexStruct(const unsigned int n, const Weight w) { this->n = n;   this->w = w; }
 	VertexStruct(const VertexStruct& vs) { n = vs.n; w = vs.w; std::cout << "VertexStruct copy!\n"; }
 };
 
@@ -145,7 +145,10 @@ public:
 	//Retourne le poids total de l'ensemble de sommet
 	Weight weight(void) const
 	{
-		Weight totalWeight = {0,0};
+		Weight totalWeight;
+
+		for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
+			totalWeight[i] = 0;
 
 		for (const Vertex v : m_vertices)
 			totalWeight += v->w;

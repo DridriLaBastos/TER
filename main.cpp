@@ -159,11 +159,11 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 		const VertexSet& neighbors = B[i]->neighbors;
 		VertexSet P(VertexSet::intersectionBetween(neighbors, unionWithA));
 
-		if (VertexSet::unionBetween(C, B[i]).weight() + P.weight() > Cmax.weight())
+		if (!(VertexSet::unionBetween(C, B[i]).weight() + P.weight() <= Cmax.weight()))
 		{
 			Clique Cp = searchMaxWClique(G[P], Cmax, VertexSet::unionBetween(C, B[i]), O);
 
-			if (Cp.weight() > Cmax.weight())
+			if (!(Cp.weight() > Cmax.weight()))
 				Cmax = Cp;
 		}
 	}
@@ -204,12 +204,12 @@ Cliques WLMC(const Graph& G)
 		{
 			InitReturnType ip = initialize(G[P], cliqueToImprove.weight() - vi->w);
 
-			if ((ip.C0.weight() + vi->w) > cliqueToImprove.weight())
+			if (!((ip.C0.weight() + vi->w) <= cliqueToImprove.weight()))
 				cliqueToImprove = VertexSet::unionBetween(ip.C0, vi);
 
 			Clique Cp = searchMaxWClique(ip.Gp, cliqueToImprove, { {vi} }, ip.O0);
 
-			if (Cp.weight() > cliqueToImprove.weight())
+			if (!(Cp.weight() <= cliqueToImprove.weight()))
 				cliqueToImprove = Cp;
 			
 			//Maintenant que l'on a remplacé l'ancienne clique par une meilleure, on regarde si cette nouvelle clique
@@ -284,21 +284,42 @@ int main(int argc, const char** argv)
 
 	setup();
 	VertexContainer container;
-	container.emplace_back(new VertexStruct(1,{10, 1}));
-	container.emplace_back(new VertexStruct(2,{10, 1}));
-	container.emplace_back(new VertexStruct(3,{1, 10}));
-	container.emplace_back(new VertexStruct(4,{1, 15}));
+	std::unique_ptr<VertexStruct> v1 (new VertexStruct(1,{40,10}));
+	std::unique_ptr<VertexStruct> v2 (new VertexStruct(2,{30,20}));
+	std::unique_ptr<VertexStruct> v3 (new VertexStruct(3,{10,20}));
+	std::unique_ptr<VertexStruct> v4 (new VertexStruct(4,{1,30}));
+	std::unique_ptr<VertexStruct> v5 (new VertexStruct(4,{2,30}));
+
+	std::unique_ptr<VertexStruct> v6 (new VertexStruct(1,{2,30}));
+	//std::unique_ptr<VertexStruct> v7 (new VertexStruct(2,{300,1,1}));
+	//std::unique_ptr<VertexStruct> v8 (new VertexStruct(3,{100,3,1}));
+	//std::unique_ptr<VertexStruct> v9 (new VertexStruct(4,{1,10,100}));
+	//std::unique_ptr<VertexStruct> v10 (new VertexStruct(4,{0,0,100}));
 
 	std::pair<Vertices, Edges> pair;
-	pair.first.resize(container.size());
-
-	for (size_t i = 0; i < container.size(); ++i)
-		pair.first[i] = container[i].get();
+	pair.first.emplace_back(v1.get());
+	pair.first.emplace_back(v2.get());
+	pair.first.emplace_back(v3.get());
+	pair.first.emplace_back(v4.get());
+	pair.first.emplace_back(v5.get());
+	//pair.first.emplace_back(v6.get());
+	//pair.first.emplace_back(v7.get());
+	//pair.first.emplace_back(v8.get());
+	//pair.first.emplace_back(v9.get());
+	//pair.first.emplace_back(v10.get());
 	
-	pair.second.emplace_back(makeEdge(pair.first[2],pair.first[0]));
-	pair.second.emplace_back(makeEdge(pair.first[2],pair.first[1]));
-	pair.second.emplace_back(makeEdge(pair.first[2],pair.first[3]));
-	pair.second.emplace_back(makeEdge(pair.first[0],pair.first[1]));
+	pair.second.emplace_back(makeEdge(v1.get(),v2.get()));
+	pair.second.emplace_back(makeEdge(v3.get(),v1.get()));
+	pair.second.emplace_back(makeEdge(v3.get(),v2.get()));
+	pair.second.emplace_back(makeEdge(v3.get(),v4.get()));
+	pair.second.emplace_back(makeEdge(v4.get(),v5.get()));
+	//pair.second.emplace_back(makeEdge(v4.get(),v6.get()));
+	//pair.second.emplace_back(makeEdge(v5.get(),v6.get()));
+	//pair.second.emplace_back(makeEdge(v7.get(),v8.get()));
+	//pair.second.emplace_back(makeEdge(v9.get(),v6.get()));
+	//pair.second.emplace_back(makeEdge(v9.get(),v7.get()));
+	//pair.second.emplace_back(makeEdge(v9.get(),v8.get()));
+	//pair.second.emplace_back(makeEdge(v9.get(),v10.get()));
 
 	/*GraphFileReader reader (argv[1]);
 	std::pair<Vertices, Edges> pair = reader.readFile(container);*/
