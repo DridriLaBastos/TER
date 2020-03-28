@@ -255,6 +255,7 @@ private:
 struct VertexSets
 {
 	std::vector<VertexSet> set;
+
 	Weights getWeights(void) const
 	{
 		Weights ret;
@@ -263,6 +264,30 @@ struct VertexSets
 			ret.emplace_back(s.weight());
 
 		return ret;
+	}
+
+	void tryInsertAndRemoveDominated (const VertexSet& vs)
+	{
+		bool vertexAdded = false;
+
+		for (size_t i = 0; i < set.size(); ++i)
+		{
+			if (!(vs.weight() <= set[i].weight()))
+			{
+				if (vertexAdded)
+				{
+					set.emplace_back(vs);
+					vertexAdded = false;
+				}
+
+				if (vs.weight() > set[i].weight())
+				{
+					std::swap(set.back(),set[i]);
+					set.pop_back();
+				}
+			}
+		}
+
 	}
 };
 

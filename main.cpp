@@ -139,18 +139,20 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 	return B;
 }
 
-Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const VertexOrdering& O)
+Cliques searchMaxWCliques(const Graph& G, const Clique Cmax, const Clique& C, const VertexOrdering& O)
 {
 	if (G.empty())
-		return C;
+		return {{ C }};
 
 	VertexSet B = getBranches(G, Cmax.weight() - C.weight(), O);
 	if (B.empty())
-		return Cmax;
+		return {{ Cmax }};
 
 	VertexSet A = G.getVertexSet();
 	A.remove(B);
 	B.orderWith(O);
+
+	Cliques results {{ Cmax }};
 
 	for (size_t i = B.size() - 1; i < B.size(); --i)
 	{
@@ -161,13 +163,14 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 
 		if (!(VertexSet::unionBetween(C, B[i]).weight() + P.weight() <= Cmax.weight()))
 		{
-			Clique Cp = searchMaxWClique(G[P], Cmax, VertexSet::unionBetween(C, B[i]), O);
+			Cliques Cp = searchMaxWCliques(G[P], Cmax, VertexSet::unionBetween(C, B[i]), O);
 
-			if (!(Cp.weight() > Cmax.weight()))
-				Cmax = Cp;
+			for (const Clique& c: Cp.set)
+				results.tryInsertAndRemoveDominated(c);
 		}
 	}
-	return Cmax;
+
+	return results;
 }
 
 Cliques WLMC(const Graph& G)
@@ -209,38 +212,40 @@ Cliques WLMC(const Graph& G)
 			if (!((ip.C0.weight() + vi->w) <= cliqueToImprove.weight()))
 				cliqueToImprove = VertexSet::unionBetween(ip.C0, vi);
 
-			Clique Cp = searchMaxWClique(ip.Gp, cliqueToImprove, { {vi} }, ip.O0);
+			Cliques Cp = searchMaxWCliques(ip.Gp, cliqueToImprove, { {vi} }, ip.O0);
 
-			if (!(Cp.weight() <= cliqueToImprove.weight()))
-				cliqueToImprove = Cp;
-			
-			//Maintenant que l'on a remplacé l'ancienne clique par une meilleure, on vérifie que cette clique n'est dominée par aucune autres cliques de l'ensemble. Si c'est le cas
-			//(ou si la clique est de même poids), on l'oublie
-			bool keepClique = true;
-			for (const Clique& c : Cmax.set)
+			for (const Clique& c: Cp.set)
 			{
-				if (cliqueToImprove.weight() <= c.weight())
+				if (!(c.weight() <= cliqueToImprove.weight()))
+					cliqueToImprove = c;
+				
+				//Maintenant que l'on a remplacé l'ancienne clique par une meilleure, on vérifie que cette clique n'est dominée par aucune autres cliques de l'ensemble. Si c'est le cas
+				//(ou si la clique est de même poids), on l'oublie
+				bool keepClique = true;
+				for (const Clique& c : Cmax.set)
 				{
-					keepClique = false;
-					break;
-				}
-			}
-
-			//Sinon, on supprime toutes les cliques dominées par cette nouvelle clique, puis on l'ajoute à l'ensemble des solutions
-			if (keepClique)
-			{
-				for (size_t i = 0; i < Cmax.set.size(); ++i)
-				{
-					if (cliqueToImprove.weight() > Cmax.set[i].weight())
+					if (cliqueToImprove.weight() <= c.weight())
 					{
-						std::swap(Cmax.set[i],Cmax.set.back());
-						Cmax.set.pop_back();
+						keepClique = false;
+						break;
 					}
 				}
 
-				Cmax.set.emplace_back(cliqueToImprove);
-			}
+				//Sinon, on supprime toutes les cliques dominées par cette nouvelle clique, puis on l'ajoute à l'ensemble des solutions
+				if (keepClique)
+				{
+					for (size_t i = 0; i < Cmax.set.size(); ++i)
+					{
+						if (cliqueToImprove.weight() > Cmax.set[i].weight())
+						{
+							std::swap(Cmax.set[i],Cmax.set.back());
+							Cmax.set.pop_back();
+						}
+					}
 
+					Cmax.set.emplace_back(cliqueToImprove);
+				}
+			}
 		}
 	}
 	const auto end = std::chrono::steady_clock::now();
