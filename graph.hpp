@@ -391,13 +391,14 @@ public:
 			std::swap(m_vertices[vPosInVertices], m_vertices.back());
 			m_vertices.pop_back();
 
-			//On présèrve l'ordre des vertex
+			//TODO: regarder comment préserver l'ordre
 			//TODO: est-ce vraiment nécessaire ? Le profiler windows n'affichait même pas l'utilisation de orderWith
+			//On présèrve l'ordre des vertex
 			//comme importante pour le CPU ?
-			for (size_t i = vPosInVertices; i < m_vertices.size() - 1; ++i)
-			{ m_vertices[i] = m_vertices[i+1]; }
+			//for (size_t i = vPosInVertices; i < m_vertices.size() - 1; ++i)
+			//{ m_vertices[i] = m_vertices[i+1]; }
 
-			m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
+			//m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
 
 			size_t graphSize = m_edges.size();
 			for (size_t i = 0; i < graphSize; ++i)

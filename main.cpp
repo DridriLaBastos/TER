@@ -384,7 +384,6 @@ int main(int argc, const char** argv)
 	pair.first.emplace_back(v13.get());
 	pair.first.emplace_back(v14.get());
 	pair.first.emplace_back(v15.get());
-	pair.first.emplace_back(v15.get());
 	pair.first.emplace_back(v16.get());
 	pair.first.emplace_back(v17.get());
 	pair.first.emplace_back(v18.get());
@@ -426,14 +425,14 @@ int main(int argc, const char** argv)
 	pair.second.emplace_back(makeEdge(v15.get(),v17.get()));
 	pair.second.emplace_back(makeEdge(v15.get(),v18.get()));
 	pair.second.emplace_back(makeEdge(v15.get(),v19.get()));
-
+	
 	pair.second.emplace_back(makeEdge(v16.get(),v17.get()));
 	pair.second.emplace_back(makeEdge(v16.get(),v18.get()));
 	pair.second.emplace_back(makeEdge(v16.get(),v19.get()));
-
+	
 	pair.second.emplace_back(makeEdge(v17.get(),v18.get()));
 	pair.second.emplace_back(makeEdge(v17.get(),v19.get()));
-
+	
 	pair.second.emplace_back(makeEdge(v18.get(),v19.get()));
 
 	/*GraphFileReader reader (argv[1]);
