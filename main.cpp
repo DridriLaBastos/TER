@@ -94,44 +94,78 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 	{
 		const Vertex& v = V[i];
 
-		const auto found = std::find_if(PI.set.begin(), PI.set.end(),
-			[&](VertexSet& d)
+		VertexSet* found = nullptr;
+		bool tryCreateNewIS = false;
+
+		//Première partie de la condition: si il existe D dans PI qui n'a pas de voisin de v dedans
+		for (VertexSet& s: PI.set)
+		{
+			found = &s;
+			for (const Vertex n: G.getNeighborsOf(v))
 			{
-				/** test l'intersection entre les sommets déjà dans d et les voisins de v **/
-				for (const Vertex& vertex : G.getNeighborsOf(v))
+				for (const Vertex& testVertex: s.getVertices())
 				{
-					for (size_t i = 0; i < d.size(); ++i)
-					{
-						if (d[i] == vertex)
-							return false;
-					}
+					if (testVertex == n)
+						found = nullptr;
 				}
 
-				return true;
-			});
-
-		/** Si l'intersection est vide on test le poids **/
-		if (found != PI.set.end())
-		{
-			Weights sum;
-			found->emplace_back(v);
-			std::for_each(PI.set.begin(), PI.set.end(), [&sum](const VertexSet& vs) { tryInsertAndRemoveDominated(vs.weight(),sum); });
-
-			if (t <= sum)
-			{
-				found->pop_back();
-				B.emplace_back(v);
+				if (found != nullptr)
+					break;
 			}
-		}
-		else
-		{
-			Weights sum = { v->w };
-			std::for_each(PI.set.begin(), PI.set.end(), [&sum](const VertexSet& vs) { tryInsertAndRemoveDominated(vs.weight(),sum); });
 
-			if (t <= sum)
-				B.emplace_back(v);
-			else
-				PI.set.emplace_back(Vertices{ v });
+			if (found != nullptr)
+				break;
+		}
+
+		//Si la première partie de la condition est vraie, on passe à la deuxième partie quiu vérifie que
+		//la somme des poids max n'est pas supérieures à t une fois que l'on a ajouté v dans l'ensemble que
+		//l'on a trouvé juste avant
+		if (found != nullptr)
+		{
+			found->emplace_back(v);
+			Weights sumMaxWeights;
+
+			for (const VertexSet& vs : PI.set)
+			{
+				sumMaxWeights += vs.getMaxWeights();
+				
+				//S'il exite un poids qui domine t, alors la deuxième partie de la conition est fausse,
+				//on passe donc au bloc else if qui va essayer de créer un nouvel ensemble indépendant avec
+				//ce sommet
+				if (!(t <= sumMaxWeights))
+				{
+					found->pop_back();
+					tryCreateNewIS = true;
+					break;
+				}
+			}
+
+			//Si on arrive à la fin de la boucle, alors on peut ajouter v dans l'ensemble indépendant trouvé
+			//dans found, mais comme cette action a été faite au début du bloc, l'algorithme ce termine ici pour ce sommet
+		}
+
+		if (tryCreateNewIS)
+		{
+			Weights sumMaxWeights = {v->w};
+			bool shouldCreateNewIS = true;
+
+			for (const VertexSet& vs: PI.set)
+			{
+				sumMaxWeights += vs.getMaxWeights();
+
+				//S'il existe un poids qui domine t, alors on ne peut pas créer un nouvel ensemble indépendant,
+				//on ajoute donc t à l'ensemble des sommets de branchements et l'algorithme se finit ici pour v
+				if (!(t <= sumMaxWeights))
+				{
+					B.emplace_back(v);
+					tryCreateNewIS = false;
+					break;
+				}
+			}
+
+			if (shouldCreateNewIS)
+				PI.set.emplace_back(Vertices{v});
+
 		}
 	}
 

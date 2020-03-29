@@ -123,6 +123,20 @@ Weight operator- (const Weight& w1, const Weight& w2)
 	return w;
 }
 
+Weights& operator+= (Weights& weights, const Weights& toAdd)
+{
+	Weights newWeights;
+	newWeights.resize(weights.size() * toAdd.size());
+	std::swap(weights,newWeights);
+
+	for (const Weight& w1: newWeights)
+	{
+		for (const Weight& w2: toAdd)
+			weights.emplace_back(w1 + w2);
+	}
+	return weights;
+}
+
 class VertexSet
 {
 public:

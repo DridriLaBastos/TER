@@ -7,7 +7,7 @@ EXEC = wlmc.out
 all: $(EXEC)
 
 $(EXEC) : $(CXXSRC) $(CXXHEADER)
-	$(CXX) $(CPPFLAGS) --std=c++11 -g -W -Wextra -O3 $(CXXSRC) -o $@
+	$(CXX) $(CPPFLAGS) --std=c++11 -W -Wextra -O3 $(CXXSRC) -o $@
 
 clean:
 	rm $(EXEC)
