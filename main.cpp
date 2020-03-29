@@ -98,24 +98,31 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 		bool tryCreateNewIS = true;
 		bool vertexShouldBeAddedToBranche = true;
 
-		//Première partie de la condition: si il existe D dans PI qui n'a pas de voisin de v dedans
+		//Première partie de la condition: si il existe un ensemble D de PI qui n'a pas de voisin de v dedans
 		for (VertexSet& s: PI.set)
 		{
-			found = &s;
+			bool neighborFound = false;
+
 			for (const Vertex n: G.getNeighborsOf(v))
 			{
 				for (const Vertex& testVertex: s.getVertices())
 				{
 					if (testVertex == n)
-						found = nullptr;
+					{
+						neighborFound = true;
+						break;
+					}
 				}
 
-				if (found != nullptr)
+				if (neighborFound)
 					break;
 			}
 
-			if (found != nullptr)
+			if (!neighborFound)
+			{
+				found = &s;
 				break;
+			}
 		}
 
 		//Si la première partie de la condition est vraie, on passe à la deuxième partie quiu vérifie que
@@ -133,7 +140,7 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 				//S'il exite un poids qui domine t, alors la deuxième partie de la conition est fausse,
 				//on passe donc au bloc else if qui va essayer de créer un nouvel ensemble indépendant avec
 				//ce sommet
-				if (!(t <= sumMaxWeights))
+				if (!(sumMaxWeights <= t))
 				{
 					found->pop_back();
 					break;
@@ -343,7 +350,7 @@ int main(int argc, const char** argv)
 	VertexContainer container;
 	std::unique_ptr<VertexStruct> v1 (new VertexStruct(1,{3,1}));
 	std::unique_ptr<VertexStruct> v2 (new VertexStruct(2,{3,2}));
-	std::unique_ptr<VertexStruct> v3 (new VertexStruct(3,{2,3}));
+	std::unique_ptr<VertexStruct> v3 (new VertexStruct(3,{3,3}));
 	std::unique_ptr<VertexStruct> v4 (new VertexStruct(4,{1,4}));
 	std::unique_ptr<VertexStruct> v5 (new VertexStruct(5,{4,5}));
 

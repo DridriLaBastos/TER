@@ -134,14 +134,19 @@ Weight operator- (const Weight& w1, const Weight& w2)
 
 Weights& operator+= (Weights& weights, const Weights& toAdd)
 {
-	Weights newWeights;
-	newWeights.resize(weights.size() * toAdd.size());
-	std::swap(weights,newWeights);
-
-	for (const Weight& w1: newWeights)
+	if (weights.empty())
+		weights = toAdd;
+	else
 	{
-		for (const Weight& w2: toAdd)
-			weights.emplace_back(w1 + w2);
+		Weights newWeights;
+		newWeights.reserve(weights.size() * toAdd.size());
+		std::swap(weights,newWeights);
+
+		for (const Weight& w1: toAdd)
+		{
+			for (const Weight& w2: newWeights)
+				weights.emplace_back(w1 + w2);
+		}
 	}
 	return weights;
 }
