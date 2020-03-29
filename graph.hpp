@@ -60,6 +60,17 @@ struct VertexDegreePair
 	VertexDegreePair(const Vertex& ver, const unsigned int d) : v(ver) { this->d = d; }
 };
 
+bool operator>(const Weight& w1, const Weight& w2)
+{
+	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
+	{
+		if (w1[i] <= w2[i])
+			return false;
+	}
+
+	return true;
+}
+
 static bool tryInsertAndRemoveDominated(const Weight& w, Weights& weights)
 {
 	weights.emplace_back(w);
@@ -512,17 +523,6 @@ bool operator<= (const Weights& weights, const Weight& W)
 		if (!(w <= W))
 			return false;
 	}
-	return true;
-}
-
-bool operator>(const Weight& w1, const Weight& w2)
-{
-	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
-	{
-		if (w1[i] <= w2[i])
-			return false;
-	}
-
 	return true;
 }
 
