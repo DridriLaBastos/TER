@@ -60,35 +60,33 @@ struct VertexDegreePair
 	VertexDegreePair(const Vertex& ver, const unsigned int d) : v(ver) { this->d = d; }
 };
 
-bool tryInsertAndRemoveDominated(const Weight& w, Weights& weights)
+static bool tryInsertAndRemoveDominated(const Weight& w, Weights& weights)
 {
-	bool addVertexWeight = true;
+	weights.emplace_back(w);
 	
-	for (size_t i = 0; i < weights.size(); ++i)
+	for (size_t i = 0; i < weights.size()-1; ++i)
 	{
-		//Si le poids du sommet n'est pas plus petit que le poids que l'on teste parmis l'ensemble des
-		//poids max, on ajoute le poids du sommet.
-		//Mais si le poids du sommet est strictement supérieur à celui que l'on teste parmis l'ensemble
-		//des poids max, alors on enlève ce poids car il est dominé par celui du sommet
-		if (!(w <= weights[i]))
+		//Si le poids ajouté est plus petit qu'un autre poids, on supprime l'insertion et
+		//l'algorithme s'arrête là
+		if (w <= weights[i])
 		{
-			if (addVertexWeight)
-			{
-				weights.emplace_back(w);
-				addVertexWeight = false;
-			}
-
-			if (w > weights[i])
-			{
-				std::swap(weights.back(),weights[i]);
-				weights.pop_back();
-			}
+			weights.pop_back();
+			return false;
+		}
+		//Si le poids ajouté domine un autre poids, on supprime ce poids dominé en gardant le poids que l'on
+		//vient d'ajouter à la fin du tableau
+		else if (w > weights[i])
+		{
+			std::swap(weights.back(), weights[i]);
+			weights.pop_back();
+			std::swap(weights.back(), weights[i]);
+			--i;
 		}
 	}
 
 	//Si addVertexWeight vaut true, ça veut dire que l'on a pas ajouté le sommet la fonction renvoie donc
 	//false, et inversement si addVertexWeight vaut true
-	return !addVertexWeight;
+	return  true;
 }
 
 using VertexDegreePairs = std::vector<VertexDegreePair>;
