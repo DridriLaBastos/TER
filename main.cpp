@@ -95,7 +95,8 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 		const Vertex& v = V[i];
 
 		VertexSet* found = nullptr;
-		bool tryCreateNewIS = false;
+		bool tryCreateNewIS = true;
+		bool vertexShouldBeAddedToBranche = true;
 
 		//Première partie de la condition: si il existe D dans PI qui n'a pas de voisin de v dedans
 		for (VertexSet& s: PI.set)
@@ -135,38 +136,38 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 				if (!(t <= sumMaxWeights))
 				{
 					found->pop_back();
-					tryCreateNewIS = true;
 					break;
 				}
 			}
 
+			tryCreateNewIS = false;
+			vertexShouldBeAddedToBranche = false;
 			//Si on arrive à la fin de la boucle, alors on peut ajouter v dans l'ensemble indépendant trouvé
 			//dans found, mais comme cette action a été faite au début du bloc, l'algorithme ce termine ici pour ce sommet
 		}
 
 		if (tryCreateNewIS)
 		{
-			Weights sumMaxWeights = {v->w};
+			Weights sumMaxWeights = { v->w };
 			bool shouldCreateNewIS = true;
 
-			for (const VertexSet& vs: PI.set)
-			{
+			for (const VertexSet& vs : PI.set)
 				sumMaxWeights += vs.getMaxWeights();
 
-				//S'il existe un poids qui domine t, alors on ne peut pas créer un nouvel ensemble indépendant,
-				//on ajoute donc t à l'ensemble des sommets de branchements et l'algorithme se finit ici pour v
-				if (!(t <= sumMaxWeights))
-				{
-					B.emplace_back(v);
-					tryCreateNewIS = false;
-					break;
-				}
-			}
+			//S'il existe un des poids max pour lequel on ne peut pas dire qu'il est <= t, alors on ne peut pas créer un nouvel ensemble indépendant,
+			//il faudra ajouter ce sommet à l'ensemble des sommets de branchements
+			if (!(sumMaxWeights <= t))
+				shouldCreateNewIS = false;
 
 			if (shouldCreateNewIS)
-				PI.set.emplace_back(Vertices{v});
-
+			{
+				vertexShouldBeAddedToBranche = false;
+				PI.set.emplace_back(Vertices{ v });
+			}
 		}
+
+		if (vertexShouldBeAddedToBranche)
+			B.emplace_back(v);
 	}
 
 	B.orderWith(O);
@@ -340,13 +341,13 @@ int main(int argc, const char** argv)
 
 	setup();
 	VertexContainer container;
-	std::unique_ptr<VertexStruct> v1 (new VertexStruct(1,{10,1}));
-	std::unique_ptr<VertexStruct> v2 (new VertexStruct(2,{20,5}));
-	std::unique_ptr<VertexStruct> v3 (new VertexStruct(3,{20,4}));
-	std::unique_ptr<VertexStruct> v4 (new VertexStruct(4,{0,31}));
-	std::unique_ptr<VertexStruct> v5 (new VertexStruct(5,{5,40}));
+	std::unique_ptr<VertexStruct> v1 (new VertexStruct(1,{3,1}));
+	std::unique_ptr<VertexStruct> v2 (new VertexStruct(2,{3,2}));
+	std::unique_ptr<VertexStruct> v3 (new VertexStruct(3,{2,3}));
+	std::unique_ptr<VertexStruct> v4 (new VertexStruct(4,{1,4}));
+	std::unique_ptr<VertexStruct> v5 (new VertexStruct(5,{4,5}));
 
-	std::unique_ptr<VertexStruct> v6 (new VertexStruct(6,{5,30}));
+	std::unique_ptr<VertexStruct> v6 (new VertexStruct(6,{1,6}));
 	std::unique_ptr<VertexStruct> v7 (new VertexStruct(7,{5,9}));
 	std::unique_ptr<VertexStruct> v8 (new VertexStruct(8,{20,100}));
 	std::unique_ptr<VertexStruct> v9 (new VertexStruct(9,{35,100}));
@@ -359,21 +360,21 @@ int main(int argc, const char** argv)
 	pair.first.emplace_back(v4.get());
 	pair.first.emplace_back(v5.get());
 	pair.first.emplace_back(v6.get());
-	pair.first.emplace_back(v7.get());
+	//pair.first.emplace_back(v7.get());
 	//pair.first.emplace_back(v8.get());
 	//pair.first.emplace_back(v9.get());
 	//pair.first.emplace_back(v10.get());
 	
 	pair.second.emplace_back(makeEdge(v1.get(),v2.get()));
 	pair.second.emplace_back(makeEdge(v1.get(),v3.get()));
-	pair.second.emplace_back(makeEdge(v1.get(),v5.get()));
-	pair.second.emplace_back(makeEdge(v1.get(),v7.get()));
-	pair.second.emplace_back(makeEdge(v2.get(),v3.get()));
 	pair.second.emplace_back(makeEdge(v2.get(),v4.get()));
-	pair.second.emplace_back(makeEdge(v3.get(),v4.get()));
+	pair.second.emplace_back(makeEdge(v3.get(),v5.get()));
 	pair.second.emplace_back(makeEdge(v3.get(),v6.get()));
-	pair.second.emplace_back(makeEdge(v5.get(),v6.get()));
-	pair.second.emplace_back(makeEdge(v5.get(),v7.get()));
+	pair.second.emplace_back(makeEdge(v4.get(),v5.get()));
+	//pair.second.emplace_back(makeEdge(v3.get(),v4.get()));
+	//pair.second.emplace_back(makeEdge(v3.get(),v6.get()));
+	//pair.second.emplace_back(makeEdge(v5.get(),v6.get()));
+	//pair.second.emplace_back(makeEdge(v5.get(),v7.get()));
 	//pair.second.emplace_back(makeEdge(v6.get(),v7.get()));
 	//pair.second.emplace_back(makeEdge(v7.get(),v10.get()));
 	//pair.second.emplace_back(makeEdge(v7.get(),v8.get()));
@@ -385,12 +386,14 @@ int main(int argc, const char** argv)
 	/*GraphFileReader reader (argv[1]);
 	std::pair<Vertices, Edges> pair = reader.readFile(container);*/
 
-	Cliques Cmax = WLMC(Graph(pair.first,pair.second));
+	//Cliques Cmax = WLMC(Graph(pair.first,pair.second));
 
-	for (Clique& c: Cmax.set)
-		std::sort(c.begin(),c.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
-	std::cout << Cmax << std::endl;
+	//for (Clique& c: Cmax.set)
+	//	std::sort(c.begin(),c.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
+	//std::cout << Cmax << std::endl;
 	//std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
+
+	getBranches(Graph(pair.first, pair.second), { 5,4 }, { v1.get() ,v2.get(),v3.get(),v4.get(),v5.get(),v6.get() });
 
 	return EXIT_SUCCESS;
 }

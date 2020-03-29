@@ -507,6 +507,16 @@ bool operator<= (const Weight& w, const Weights& weights)
 	return true;
 }
 
+bool operator<= (const Weights& weights, const Weight& W)
+{
+	for (const Weight& w : weights)
+	{
+		if (!(w <= W))
+			return false;
+	}
+	return true;
+}
+
 bool operator>(const Weight& w1, const Weight& w2)
 {
 	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
