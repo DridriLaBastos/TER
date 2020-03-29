@@ -71,6 +71,38 @@ bool operator>(const Weight& w1, const Weight& w2)
 	return true;
 }
 
+bool operator<= (const Weight& w1, const Weight& w2)
+{
+	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
+	{
+		if (w1[i] > w2[i])
+			return false;
+	}
+
+	return true;
+}
+
+bool operator<= (const Weight& w, const Weights& weights)
+{
+	for (const Weight& W : weights)
+	{
+		if (!(w <= W))
+			return false;
+	}
+
+	return true;
+}
+
+bool operator<= (const Weights& weights, const Weight& W)
+{
+	for (const Weight& w : weights)
+	{
+		if (!(w <= W))
+			return false;
+	}
+	return true;
+}
+
 static bool tryInsertAndRemoveDominated(const Weight& w, Weights& weights)
 {
 	weights.emplace_back(w);
@@ -296,26 +328,27 @@ struct VertexSets
 
 	void tryInsertAndRemoveDominated (const VertexSet& vs)
 	{
-		bool vertexAdded = false;
+		set.emplace_back(vs);
 
-		for (size_t i = 0; i < set.size(); ++i)
+		for (size_t i = 0; i < set.size() - 1; ++i)
 		{
-			if (!(vs.weight() <= set[i].weight()))
+			//Si le poids ajouté est plus petit qu'un autre poids, on supprime l'insertion et
+			//l'algorithme s'arrête là
+			if (vs.weight() <= set[i].weight())
 			{
-				if (vertexAdded)
-				{
-					set.emplace_back(vs);
-					vertexAdded = false;
-				}
-
-				if (vs.weight() > set[i].weight())
-				{
-					std::swap(set.back(),set[i]);
-					set.pop_back();
-				}
+				set.pop_back();
+				break;
+			}
+			//Si le poids ajouté domine un autre poids, on supprime ce poids dominé en gardant le poids que l'on
+			//vient d'ajouter à la fin du tableau
+			else if (vs.weight() > set[i].weight())
+			{
+				std::swap(set.back(), set[i]);
+				set.pop_back();
+				std::swap(set.back(), set[i]);
+				--i;
 			}
 		}
-
 	}
 };
 
@@ -498,38 +531,6 @@ private:
 	Edges		m_edges;//Les arrêtes
 	Vertices	m_vertices;//Les sommets
 };
-
-bool operator<= (const Weight& w1, const Weight& w2)
-{
-	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
-	{
-		if (w1[i] > w2[i])
-			return false;
-	}
-
-	return true;
-}
-
-bool operator<= (const Weight& w, const Weights& weights)
-{
-	for (const Weight& W: weights)
-	{
-		if (!(w <= W))
-			return false;
-	}
-
-	return true;
-}
-
-bool operator<= (const Weights& weights, const Weight& W)
-{
-	for (const Weight& w : weights)
-	{
-		if (!(w <= W))
-			return false;
-	}
-	return true;
-}
 
 std::ostream& operator<< (std::ostream& stream, const Weight& w)
 {

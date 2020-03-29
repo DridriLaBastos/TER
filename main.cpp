@@ -125,7 +125,7 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 			}
 		}
 
-		//Si la première partie de la condition est vraie, on passe à la deuxième partie quiu vérifie que
+		//Si la première partie de la condition est vraie, on passe à la deuxième partie qui vérifie que
 		//la somme des poids max n'est pas supérieures à t une fois que l'on a ajouté v dans l'ensemble que
 		//l'on a trouvé juste avant
 		if (found != nullptr)
@@ -134,23 +134,20 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 			Weights sumMaxWeights;
 
 			for (const VertexSet& vs : PI.set)
-			{
 				sumMaxWeights += vs.getMaxWeights();
-				
-				//S'il exite un poids qui domine t, alors la deuxième partie de la conition est fausse,
-				//on passe donc au bloc else if qui va essayer de créer un nouvel ensemble indépendant avec
-				//ce sommet
-				if (!(sumMaxWeights <= t))
-				{
-					found->pop_back();
-					break;
-				}
-			}
 
-			tryCreateNewIS = false;
-			vertexShouldBeAddedToBranche = false;
-			//Si on arrive à la fin de la boucle, alors on peut ajouter v dans l'ensemble indépendant trouvé
-			//dans found, mais comme cette action a été faite au début du bloc, l'algorithme ce termine ici pour ce sommet
+			//S'il exite un poids qui domine t, alors la deuxième partie de la conition est fausse,
+			//on passe donc au bloc else if qui va essayer de créer un nouvel ensemble indépendant avec
+			//ce sommet
+			if (!(sumMaxWeights <= t))
+				found->pop_back();
+			else
+			{
+				//Sinon on arrive à la fin de la boucle, alors on peut ajouter v dans l'ensemble indépendant trouvé
+				//dans found, mais comme cette action a été faite au début du bloc, l'algorithme ce termine ici pour ce sommet
+				tryCreateNewIS = false;
+				vertexShouldBeAddedToBranche = false;
+			}
 		}
 
 		if (tryCreateNewIS)
