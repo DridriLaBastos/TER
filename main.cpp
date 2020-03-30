@@ -32,7 +32,7 @@ InitReturnType initialize(const Graph& G, Weight lb)
 		{
 			//Order U arbitrarily as vi, v_(i+1), v_(i+2)...
 			std::sort(degrees.begin(), degrees.end(),
-				[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.v->n < b.v->n; });
+				[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.v->vertex->n < b.v->vertex->n; });
 
 			for (const auto& vdp : degrees)
 			{
@@ -74,9 +74,9 @@ InitReturnType initialize(const Graph& G, Weight lb)
 	if (C0.weight() > lb)
 		lb = C0.weight();
 
-	for (const Vertex& v : G.getVertices())
+	for (const GraphVertex& v : G)
 	{
-		Weight w_s = VertexSet(G.getNeighborsOf(v)).weight() + v->w;
+		Weight w_s = VertexSet(v.neighbors).weight() + v.vertex->w;
 
 		if (w_s <= lb)
 			Gp.removeVertex(v);
