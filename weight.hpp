@@ -4,7 +4,7 @@
 #include <array>
 #include <vector>
 
-constexpr size_t WEIGHTS_SIZE = 2;
+constexpr size_t WEIGHTS_SIZE = 1;
 
 using Weight = std::array<int, WEIGHTS_SIZE>;
 using Weights = std::vector<Weight>;

@@ -324,6 +324,12 @@ static void signalHandler(const int sigNum)
 	exit(EXIT_FAILURE);
 }
 
+//#define HAND
+
+#ifndef HAND
+	#include "graphFileReader.hpp"
+#endif
+
 static void setup (void)
 {
 	//_MSC_VER est une macro contenant la version du compilateur msvc utilisé par windows. On utilise cette
@@ -337,14 +343,15 @@ static void setup (void)
 
 int main(int argc, const char** argv)
 {
-	/*if (argc != 2)
+#ifndef HAND
+	if (argc != 2)
 	{
 		std::cerr << "arguments are <file path>\n";
 		return EXIT_FAILURE;
-	}*/
-
+	}
+#endif
 	setup();
-	VertexContainer container;
+#ifdef HAND
 	std::unique_ptr<VertexStruct> v1 (new VertexStruct(1,{20,4}));
 	std::unique_ptr<VertexStruct> v2 (new VertexStruct(2,{10,4}));
 	std::unique_ptr<VertexStruct> v3 (new VertexStruct(3,{10,4}));
@@ -434,9 +441,11 @@ int main(int argc, const char** argv)
 	pair.second.emplace_back(makeEdge(v17.get(),v19.get()));
 	
 	pair.second.emplace_back(makeEdge(v18.get(),v19.get()));
-
-	/*GraphFileReader reader (argv[1]);
-	std::pair<Vertices, Edges> pair = reader.readFile(container);*/
+#else
+	VertexContainer container;
+	GraphFileReader reader (argv[1]);
+	std::pair<Vertices, Edges> pair = reader.readFile(container);
+#endif
 
 	Cliques Cmax = WLMC(Graph(pair.first,pair.second));
 
