@@ -14,38 +14,50 @@ struct VertexStruct
 	unsigned int n;//Vertex number
 	Weight w;//Vertex weight
 
-	std::vector<VertexStruct*> neighbors;
-
 	VertexStruct(const unsigned int n, const Weight w = 1) { this->n = n;   this->w = w; }
 	VertexStruct(const VertexStruct& vs) { n = vs.n; w = vs.w; std::cout << "VertexStruct copy!\n"; }
 };
+using VertexContainer = std::vector<std::unique_ptr<VertexStruct>>;
+
+struct GraphVertex
+{
+	VertexStruct* vertex;
+	std::vector<GraphVertex*> neighbors;
+};
+
+using Vertex = GraphVertex*;
+using Vertices = std::vector<Vertex>;
+
+using GraphVertices = std::vector<GraphVertex>;
 
 //On veut le unique_ptr pour ne pas avoir de copy de VertexStruct si jamais VertexContainer.emplace_back doit allouer
 //un nouveau tableau
-using VertexContainer = std::vector<std::unique_ptr<VertexStruct>>;
-using Vertex = VertexStruct*;
-using Vertices = std::vector<Vertex>;
 using VertexOrdering = Vertices;
 
+//TODO: comme chaque GraphVertex stock ses voisins, l'information edge est redondante et je devrais peut être
+//l'enlever
 using Edge = std::pair<Vertex, Vertex>;
 using Edges = std::vector<Edge>;
 
-static void connect(Vertex a, Vertex b)
+bool operator==(const GraphVertex& v1, const Vertex& v2) { return v1.vertex == v2->vertex; }
+bool operator==(const GraphVertex& v1, const GraphVertex& v2) { return v1.vertex == v2.vertex; }
+
+static void connect(GraphVertex& a, GraphVertex& b)
 {
-	auto found = std::find(a->neighbors.begin(), a->neighbors.end(), b);
+	auto found = std::find(a.neighbors.begin(), a.neighbors.end(), b);
 
 	//On connect deux sommets que s'ils ne sont pas déjà connectés
-	if (found == a->neighbors.end())
+	if (found == a.neighbors.end())
 	{
-		a->neighbors.emplace_back(b);
-		b->neighbors.emplace_back(a);
+		a.neighbors.emplace_back(&b);
+		b.neighbors.emplace_back(&a);
 	}
 }
 
-static Edge makeEdge(const Vertex& a, const Vertex& b)
+static Edge makeEdge(GraphVertex& a, GraphVertex& b)
 {
 	connect(a, b);
-	return std::make_pair(a, b);
+	return std::make_pair(&a, &b);
 }
 
 struct VertexDegreePair
@@ -61,15 +73,14 @@ using VertexDegreePairs = std::vector<VertexDegreePair>;
 class VertexSet
 {
 public:
-	VertexSet(void) {}
-	VertexSet(const Vertices& vertices) : m_vertices(vertices) {}
+	VertexSet(const Vertices& vertices = {}) : m_vertices(vertices) {}
 
 public:
 	void emplace_back(const Vertex& v) { m_vertices.emplace_back(v); }
 	void pop_back(void) { m_vertices.pop_back(); }
 	void reserve(const size_t n) { m_vertices.reserve(n); }
 
-	const Vertices& getVertices(void) const { return m_vertices; }
+	//const Vertices& getVertices(void) const { return m_vertices; }
 
 	Vertices::iterator begin(void) { return m_vertices.begin(); }
 	Vertices::const_iterator begin(void) const { return m_vertices.begin(); }
@@ -82,7 +93,7 @@ public:
 		Weight totalWeight = 0;
 
 		for (const Vertex v : m_vertices)
-			totalWeight += v->w;
+			totalWeight += v->vertex->w;
 
 		return totalWeight;
 	}
@@ -92,7 +103,7 @@ public:
 		Weight max = 0;
 
 		for (const Vertex v : m_vertices)
-			max = (v->w > max) ? v->w : max;
+			max = (v->vertex->w > max) ? v->vertex->w : max;
 		return max;
 	}
 
@@ -188,15 +199,23 @@ using Cliques = VertexSets;
 class Graph
 {
 public:
-	Graph(const Edges& edges = {}) : m_edges(edges) { rebuildVerticesSet(); }
-	Graph(const Vertices& vertices, const Edges& edges) : m_vertices(vertices), m_edges(edges) {}
+	Graph(void) {}
+	Graph(const GraphVertices& vertices, const Edges& edges) : m_vertices(vertices), m_edges(edges) {}
+
+public:
+	GraphVertices::iterator begin(void) { return m_vertices.begin(); }
+	GraphVertices::const_iterator begin(void) const { return m_vertices.begin(); }
+
+	GraphVertices::iterator end(void) { return m_vertices.end(); }
+	GraphVertices::const_iterator end(void) const { return m_vertices.end(); }
 
 public:
 	Graph operator[](const VertexSet& V) const
 	{
-		Graph ret;
-		ret.m_vertices = V.getVertices();
-		Edges E;
+		Graph ret;   ret.m_vertices.reserve(V.size());
+
+		for (const Vertex& v: V)
+			ret.m_vertices.emplace_back(v->vertex);
 
 		for(const Edge& e: m_edges)
 		{
@@ -205,15 +224,24 @@ public:
 
 			for (size_t i = 0; i < V.size(); ++i)
 			{
+				size_t posFirst = 0;
+				size_t posSecond = 0;
+
 				if (V[i] == e.first)
+				{
+					posFirst = i;
 					findFirst = true;
+				}
 			
 				if (V[i] == e.second)
+				{
+					posSecond = i;
 					findSecond = true;
+				}
 			
 				if (findFirst && findSecond)
 				{
-					ret.m_edges.emplace_back(e);
+					ret.m_edges.emplace_back(makeEdge(ret.m_vertices[posFirst], ret.m_vertices[posSecond]));
 					break;
 				}
 			}
@@ -240,14 +268,14 @@ public:
 	VertexDegreePairs computeDegrees(void) const
 	{
 		VertexDegreePairs ret;	ret.reserve(m_vertices.size());
-
-		for (const Vertex v : m_vertices)
-			ret.emplace_back(v, computeDegreeForVertex(v));
-
+	
+		for (const GraphVertex& v : m_vertices)
+			ret.emplace_back(v, v.neighbors.size());
+	
 		return ret;
 	}
 
-	void removeVertex(const Vertex v)
+	void removeVertex(const GraphVertex& v)
 	{
 		size_t vPosInVertices = 0;
 
@@ -262,7 +290,7 @@ public:
 
 		if (vPosInVertices < m_vertices.size())
 		{
-			Vertex saveOfLastVertex = m_vertices.back();
+			GraphVertex saveOfLastVertex = m_vertices.back();
 
 			std::swap(m_vertices[vPosInVertices], m_vertices.back());
 			m_vertices.pop_back();
@@ -270,10 +298,10 @@ public:
 			//On présèrve l'ordre des vertex
 			//TODO: est-ce vraiment nécessaire ? Le profiler windows n'affichait même pas l'utilisation de orderWith
 			//comme importante pour le CPU ?
-			for (size_t i = vPosInVertices; i < m_vertices.size() - 1; ++i)
-			{ m_vertices[i] = m_vertices[i+1]; }
+			//for (size_t i = vPosInVertices; i < m_vertices.size() - 1; ++i)
+			//{ m_vertices[i] = m_vertices[i+1]; }
 
-			m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
+			//m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
 
 			size_t graphSize = m_edges.size();
 			for (size_t i = 0; i < graphSize; ++i)
@@ -294,58 +322,11 @@ public:
 	size_t size(void) const { return m_vertices.size(); }
 	bool empty(void) const { return m_vertices.empty(); }
 
-	const Vertices& getVertices(void) const { return m_vertices; }
-	const VertexSet getVertexSet(void) const { return m_vertices; }
+	//const Vertices& getVertices(void) const { return m_vertices; }
+	//const VertexSet getVertexSet(void) const { return m_vertices; }
 	const Edges& getEdges(void) const { return m_edges; }
 
 private:
-	void rebuildVerticesSet(void)
-	{
-		Vertices temp = std::move(m_vertices);
-
-		for (const Edge& e : m_edges)
-		{
-			bool foundFirst = false;
-			bool foundSecond = false;
-
-			for (const Vertex v : m_vertices)
-			{
-				if (e.first == v)
-					foundFirst = true;
-
-				if (e.second == v)
-					foundSecond = true;
-
-				if (foundFirst && foundSecond)
-					break;
-			}
-
-			if (!foundFirst)
-				m_vertices.emplace_back(e.first);
-
-			if (!foundSecond)
-				m_vertices.emplace_back(e.second);
-		}
-
-		//Ajout des sommets qui ne sont reliés a aucune arrêtes
-		for (const Vertex& v : temp)
-		{
-			bool canAdd = true;
-
-			for (const Edge& e : m_edges)
-			{
-				if ((e.first == v) || (e.second == v))
-				{
-					canAdd = false;
-					break;
-				}
-			}
-
-			if (canAdd)
-				m_vertices.emplace_back(v);
-		}
-	}
-
 	unsigned int computeDegreeForVertex(const Vertex v) const
 	{
 		unsigned int degreeOfV = 0;
@@ -358,13 +339,13 @@ private:
 	}
 
 private:
-	Edges		m_edges;//Les arrêtes
-	Vertices	m_vertices;//Les sommets
+	Edges			m_edges;//Les arrêtes
+	GraphVertices	m_vertices;//Les sommets
 };
 
 std::ostream& operator<< (std::ostream& stream, const Vertex& v)
 {
-	stream << "(" << v->n << ", " << v->w << ")";
+	stream << "(" << v->vertex->n << ", " << v->vertex->w << ")";
 	return stream;
 }
 
