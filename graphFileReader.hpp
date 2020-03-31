@@ -62,7 +62,7 @@ class GraphFileReader
 			{
 				container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber));
 				vertices.emplace_back(container[vertexNumber].get());
-				m_vertexPtrToVertexStruct[vertexNumber]->vertex = container[vertexNumber].get();
+				m_vertexPtrToVertexStruct[vertexNumber] = &vertices.back();
 			}
 
 			return *m_vertexPtrToVertexStruct[vertexNumber];

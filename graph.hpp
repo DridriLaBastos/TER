@@ -31,6 +31,7 @@ struct Vertex
 	VerticesStruct neighbors;
 	Weight weight(void) const  { return vertex->w; }
 	unsigned int num(void) const { return vertex->n; }
+	Vertex(const VertexStructPtr v = nullptr, const VerticesStruct& n = {}): vertex(v), neighbors(n) {}
 };
 
 bool operator==(const Vertex& v1, const VertexStructPtr& v2) { return v1.vertex == v2; }
@@ -53,8 +54,8 @@ static void connect(Vertex a, Vertex b)
 	//On connect deux sommets que s'ils ne sont pas déjà connectés
 	if (found == a.neighbors.end())
 	{
-		a.neighbors.emplace_back(b);
-		b.neighbors.emplace_back(a);
+		a.neighbors.emplace_back(b.vertex);
+		b.neighbors.emplace_back(a.vertex);
 	}
 }
 
@@ -410,9 +411,9 @@ std::ostream& operator<< (std::ostream& stream, const Vertices& vs)
 	return stream;
 }
 
-std::ostream& operator<< (std::ostream& stream, const Vertices& VS)
+std::ostream& operator<< (std::ostream& stream, const std::vector<Vertices>& VS)
 {
-	for (const Vertex& vs : VS)
+	for (const Vertices& vs : VS)
 		stream << vs << std::endl;
 
 	return stream;

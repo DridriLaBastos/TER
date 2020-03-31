@@ -1,4 +1,4 @@
-CXXSRC = $(wildcard *.cpp)
+CXXSRC = temp.cpp#$(wildcard *.cpp)
 CXXHEADER = $(wildcard *.hpp)
 EXEC = wlmc.out
 
