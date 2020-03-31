@@ -213,8 +213,8 @@ static bool isClique (const Clique& c, const Edges& edges)
 
 			for (const Edge& e: edges)
 			{
-				if (((e.first == c[i]) && (e.second == c[j])) || 
-					((e.first == c[j]) && (e.second == c[i])))
+				if (((e.first == c[i]->vertex) && (e.second == c[j]->vertex)) || 
+					((e.first == c[j]->vertex) && (e.second == c[i]->vertex)))
 				{
 					found = true;
 					break;

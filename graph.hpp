@@ -22,8 +22,8 @@ using VertexContainer = std::vector<std::unique_ptr<VertexStruct>>;
 struct GraphVertex
 {
 	const VertexStruct* vertex;
-	std::vector<const GraphVertex*> neighbors;
-	GraphVertex(const VertexStruct* const v = nullptr, const std::vector<const GraphVertex*>& n = {}): vertex(v), neighbors(n) {}
+	std::vector<const VertexStruct*> neighbors;
+	GraphVertex(const VertexStruct* const v = nullptr, const std::vector<const VertexStruct*>& n = {}): vertex(v), neighbors(n) {}
 };
 
 using Vertex = const GraphVertex*;
@@ -37,7 +37,7 @@ using VertexOrdering = Vertices;
 
 //TODO: comme chaque GraphVertex stock ses voisins, l'information edge est redondante et je devrais peut être
 //l'enlever
-using Edge = std::pair<Vertex, Vertex>;
+using Edge = std::pair<const VertexStruct*, const VertexStruct*>;
 using Edges = std::vector<Edge>;
 
 bool operator==(const GraphVertex& v1, const Vertex& v2) { return v1.vertex == v2->vertex; }
@@ -45,20 +45,20 @@ bool operator==(const GraphVertex& v1, const GraphVertex& v2) { return v1.vertex
 
 static void connect(GraphVertex& a, GraphVertex& b)
 {
-	auto found = std::find(a.neighbors.begin(), a.neighbors.end(), &b);
+	auto found = std::find(a.neighbors.begin(), a.neighbors.end(), b.vertex);
 
 	//On connect deux sommets que s'ils ne sont pas déjà connectés
 	if (found == a.neighbors.end())
 	{
-		a.neighbors.emplace_back(&b);
-		b.neighbors.emplace_back(&a);
+		a.neighbors.emplace_back(b.vertex);
+		b.neighbors.emplace_back(a.vertex);
 	}
 }
 
 static Edge makeEdge(GraphVertex& a, GraphVertex& b)
 {
 	connect(a, b);
-	return std::make_pair(&a, &b);
+	return std::make_pair(a.vertex, b.vertex);
 }
 
 struct VertexDegreePair
@@ -210,11 +210,6 @@ public:
 	Graph(void) {}
 	Graph(const GraphVertices& vertices, const Edges& edges) : m_vertices(vertices), m_edges(edges) {}
 
-	Graph(const Graph& G)
-	{
-
-	}
-
 public:
 	GraphVertices::iterator begin(void) { return m_vertices.begin(); }
 	GraphVertices::const_iterator begin(void) const { return m_vertices.begin(); }
@@ -240,13 +235,13 @@ public:
 				size_t posFirst = 0;
 				size_t posSecond = 0;
 
-				if (V[i] == e.first)
+				if (V[i]->vertex == e.first)
 				{
 					posFirst = i;
 					findFirst = true;
 				}
 			
-				if (V[i] == e.second)
+				if (V[i]->vertex == e.second)
 				{
 					posSecond = i;
 					findSecond = true;
@@ -322,7 +317,7 @@ public:
 			{
 				Edge& currentEdge = m_edges[i];
 
-				if ((currentEdge.first->vertex == v.vertex) || (currentEdge.second->vertex == v.vertex))
+				if ((currentEdge.first == v.vertex) || (currentEdge.second == v.vertex))
 				{
 					std::swap(m_edges[i], m_edges.back());
 					m_edges.pop_back();
@@ -341,16 +336,16 @@ public:
 	const Edges& getEdges(void) const { return m_edges; }
 
 private:
-	unsigned int computeDegreeForVertex(const Vertex v) const
-	{
-		unsigned int degreeOfV = 0;
-		for (const Edge& e : m_edges)
-		{
-			if ((e.first == v) || (e.second == v))
-				++degreeOfV;
-		}
-		return degreeOfV;
-	}
+	//unsigned int computeDegreeForVertex(const Vertex v) const
+	//{
+	//	unsigned int degreeOfV = 0;
+	//	for (const Edge& e : m_edges)
+	//	{
+	//		if ((e.first == v) || (e.second == v))
+	//			++degreeOfV;
+	//	}
+	//	return degreeOfV;
+	//}
 
 private:
 	Edges			m_edges;//Les arrêtes
