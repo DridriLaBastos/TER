@@ -14,116 +14,85 @@ struct VertexStruct
 	unsigned int n;//Vertex number
 	Weight w;//Vertex weight
 
+	std::vector<VertexStruct*> neighbors;
+
 	VertexStruct(const unsigned int n, const Weight w = 1) { this->n = n;   this->w = w; }
 	VertexStruct(const VertexStruct& vs) { n = vs.n; w = vs.w; std::cout << "VertexStruct copy!\n"; }
 };
 
+//On veut le unique_ptr pour ne pas avoir de copy de VertexStruct si jamais VertexContainer.emplace_back doit allouer
+//un nouveau tableau
 using VertexContainer = std::vector<std::unique_ptr<VertexStruct>>;
-using VertexStructPtr = const VertexStruct*;
-using VerticesStruct = std::vector<VertexStructPtr>;
-using VertexOrdering = VerticesStruct;
+using Vertex = VertexStruct*;
+using Vertices = std::vector<Vertex>;
+using VertexOrdering = Vertices;
 
-struct Vertex
-{
-	VertexStructPtr vertex;
-	VerticesStruct neighbors;
-
-	Vertex(VertexStructPtr v = nullptr, const VerticesStruct& n = {}): vertex(v), neighbors(n) {}
-};
-
-using VertexSet = std::vector<Vertex>;
-
-//TODO: comme chaque GraphVertex stock ses voisins, l'information edge est redondante et je devrais peut être
-//l'enlever
-using Edge = std::pair<const VertexStruct*, const VertexStruct*>;
+using Edge = std::pair<Vertex, Vertex>;
 using Edges = std::vector<Edge>;
 
-bool operator==(const Vertex& v1, const VertexStruct& v2) { return v1.vertex == v2; }
-bool operator==(const Vertex& v1, const Vertex& v2) { return v1.vertex == v2.vertex; }
-
-static void connect(Vertex& a, Vertex& b)
+static void connect(Vertex a, Vertex b)
 {
-	auto found = std::find(a.neighbors.begin(), a.neighbors.end(), b.vertex);
+	auto found = std::find(a->neighbors.begin(), a->neighbors.end(), b);
 
 	//On connect deux sommets que s'ils ne sont pas déjà connectés
-	if (found == a.neighbors.end())
+	if (found == a->neighbors.end())
 	{
-		a.neighbors.emplace_back(b.vertex);
-		b.neighbors.emplace_back(a.vertex);
+		a->neighbors.emplace_back(b);
+		b->neighbors.emplace_back(a);
 	}
 }
 
-static Edge makeEdge(Vertex& a, Vertex& b)
+static Edge makeEdge(const Vertex& a, const Vertex& b)
 {
 	connect(a, b);
-	return std::make_pair(a.vertex, b.vertex);
+	return std::make_pair(a, b);
 }
 
 struct VertexDegreePair
 {
-	const Vertex* v;
+	Vertex v;
 	unsigned int d;
 	//v: Vertex   d: degree
-	VertexDegreePair(const Vertex* ver, const unsigned int d) : v(ver) { this->d = d; }
+	VertexDegreePair(const Vertex& ver, const unsigned int d) : v(ver) { this->d = d; }
 };
 
 using VertexDegreePairs = std::vector<VertexDegreePair>;
 
-class Vertices
+class VertexSet
 {
-	public:
-		Vertices(const VertexSet& s = {}) : m_set(s) {}
-		Vertices(const Vertex& v) { m_set.emplace_back(v); }
-		Vertices(const VerticesStruct& vs)
-		{
-			m_set.reserve(vs.size());
-			for (const VertexStruct* const v: vs)
-				m_set.emplace_back(v);
-		}
-	
-	public:
-		/** Redéfinition des opérations de base pour les vector utiles pour les ensembles **/
-		VertexSet::iterator begin(void) { return m_set.begin(); }
-		VertexSet::const_iterator begin(void) const { return m_set.begin(); }
+public:
+	VertexSet(void) {}
+	VertexSet(const Vertices& vertices) : m_vertices(vertices) {}
 
-		VertexSet::iterator end(void) { return m_set.end(); }
-		VertexSet::const_iterator end(void) const { return m_set.end(); }
+public:
+	void emplace_back(const Vertex& v) { m_vertices.emplace_back(v); }
+	void pop_back(void) { m_vertices.pop_back(); }
+	void reserve(const size_t n) { m_vertices.reserve(n); }
 
-		VertexSet::reference operator[](VertexSet::size_type pos) { return m_set[pos]; }
-		VertexSet::const_reference operator[](VertexSet::size_type pos) const { return m_set[pos]; }
+	const Vertices& getVertices(void) const { return m_vertices; }
 
-		VertexSet::reference front(void) { return m_set.front(); }
-		VertexSet::const_reference front(void) const { return m_set.front(); }
+	Vertices::iterator begin(void) { return m_vertices.begin(); }
+	Vertices::const_iterator begin(void) const { return m_vertices.begin(); }
 
-		VertexSet::reference back(void) { return m_set.back(); }
-		VertexSet::const_reference back(void) const { return m_set.back(); }
+	Vertices::iterator end(void) { return m_vertices.end(); }
+	Vertices::const_iterator end(void) const { return m_vertices.end(); }
 
-		VertexSet::size_type size (void) const noexcept { return m_set.size(); }
+	Weight weight(void) const
+	{
+		Weight totalWeight = 0;
 
-		template <class... Args>
-		void emplace_back(Args&&... args) { m_set.emplace_back(std::forward<Args>(args)...); }
-		void reserve (VertexSet::size_type newCapacity) { m_set.reserve(newCapacity); }
-		void pop_back(void) { m_set.pop_back(); }
-		void shrink_to_fit(void) { m_set.shrink_to_fit(); }
+		for (const Vertex v : m_vertices)
+			totalWeight += v->w;
 
-		bool empty(void) const noexcept { return m_set.empty(); }
-
-		Weight weight(void) const
-		{
-			Weight totalWeight = 0;
-
-			for (const Vertex& v : m_set)
-				totalWeight += v.vertex->w;
-
-			return totalWeight;
-		}
+		return totalWeight;
+	}
 
 	Weight getMaxWeight(void) const
 	{
 		Weight max = 0;
 
-		for (const Vertex& v : m_set)
-			max = (v.vertex->w > max) ? v.vertex->w : max;
+		for (const Vertex v : m_vertices)
+			max = (v->w > max) ? v->w : max;
 		return max;
 	}
 
@@ -132,108 +101,102 @@ class Vertices
 	{
 		unsigned int vPos = 0;
 
-		for (size_t i = 0; (i < O.size()) && (vPos < m_set.size()); ++i)
+		for (size_t i = 0; (i < O.size()) && (vPos < m_vertices.size()); ++i)
 		{
-			for (size_t j = vPos; j < m_set.size(); ++j)
+			for (size_t j = vPos; j < m_vertices.size(); ++j)
 			{
-				if (m_set[j] == O[i])
-					std::swap(m_set[vPos++], m_set[j]);
+				if (m_vertices[j] == O[i])
+					std::swap(m_vertices[vPos++], m_vertices[j]);
 			}
 		}
 	}
 
-	Vertices subSet(const size_t begin, const size_t end)
+	VertexSet subSet(const size_t begin, const size_t end)
 	{
-		Vertices subset;
+		VertexSet subset;
 		if (begin <= end)
 		{
-			subset.m_set.reserve(end - begin + 1);//+1: index depuis 0
+			subset.reserve(end - begin + 1);//+1: index depuis 0
 
 			for (size_t i = begin; i <= end; ++i)
-				subset.m_set.emplace_back(m_set[i]);
+				subset.emplace_back(m_vertices[i]);
 		}
 		return subset;
 	}
 
-	void remove(const Vertices& V)
+	void remove(const VertexSet& V)
 	{
-		for (const Vertex& v: V.m_set)
+		for (const Vertex& v: V)
 		{
-			for (size_t i = 0; i < m_set.size(); ++i)
+			for (size_t i = 0; i < m_vertices.size(); ++i)
 			{
-				if (m_set[i] == v)
+				if (m_vertices[i] == v)
 				{
-					std::swap(m_set[i], m_set.back());
-					m_set.pop_back();
+					std::swap(m_vertices[i], m_vertices.back());
+					m_vertices.pop_back();
 					break;
 				}
 			}
 		}
 	}
 
-	static Vertices unionBetween(const Vertices& V1, const Vertex& v)
+	size_t size(void) const { return m_vertices.size(); }
+	bool empty(void) const { return m_vertices.empty(); }
+	const Vertex& operator[] (const size_t pos) const { return m_vertices[pos]; }
+
+	static VertexSet unionBetween(const VertexSet& V1, const Vertex& v)
 	{
-		Vertices finalUnion(V1);
+		VertexSet finalUnion(V1);
 
-		auto found = std::find(finalUnion.m_set.begin(), finalUnion.m_set.end(), v);
+		auto found = std::find(finalUnion.begin(), finalUnion.end(), v);
 
-		if (found == finalUnion.m_set.end())
-			finalUnion.m_set.emplace_back(v);
+		if (found == finalUnion.end())
+			finalUnion.emplace_back(v);
 		return finalUnion;
 	}
 
-	static Vertices unionBetween(const Vertices& V1, const Vertices& V2)
+	static VertexSet unionBetween(const VertexSet& V1, const VertexSet& V2)
 	{
-		Vertices finalUnion(V1);
-		for (const Vertex& v: V2.m_set)
+		VertexSet finalUnion(V1);
+		for (const Vertex& v: V2)
 			finalUnion = unionBetween(finalUnion, v);
 		return finalUnion;
 	}
 
-	static Vertices intersectionBetween(const Vertices& V1, const Vertices& V2)
+	static VertexSet intersectionBetween(const VertexSet& V1, const VertexSet& V2)
 	{
 		VertexSet finalIntersection;
-		for (const Vertex& v: V1.m_set)
+		for (const Vertex& v: V1)
 		{
-			for (size_t i = 0; i < V2.m_set.size(); ++i)
+			for (size_t i = 0; i < V2.size(); ++i)
 			{
-				if (V2.m_set[i] == v)
+				if (V2[i] == v)
 					finalIntersection.emplace_back(v);
 			}
 		}
 		return finalIntersection;
 	}
 
-	private:
-		VertexSet m_set;
+private:
+	Vertices m_vertices;
 };
 
-using VerticesSet = std::vector<Vertices>;
-using Clique = Vertices;
-using Cliques = VerticesSet;
+using VertexSets = std::vector<VertexSet>;
+using Clique = VertexSet;
+using Cliques = VertexSets;
 
 class Graph
 {
 public:
-	Graph(void) {}
+	Graph(const Edges& edges = {}) : m_edges(edges) { rebuildVerticesSet(); }
 	Graph(const Vertices& vertices, const Edges& edges) : m_vertices(vertices), m_edges(edges) {}
 
 public:
-	VertexSet::iterator begin(void) { return m_vertices.begin(); }
-	VertexSet::const_iterator begin(void) const { return m_vertices.begin(); }
-
-	VertexSet::iterator end(void) { return m_vertices.end(); }
-	VertexSet::const_iterator end(void) const { return m_vertices.end(); }
-
-	bool empty(void) const { return m_vertices.empty(); }
-
-public:
-	Graph operator[](const Vertices& V) const
+	Graph operator[](const VertexSet& V) const
 	{
-		Graph ret;   ret.m_vertices.reserve(V.size());
-
-		for (const Vertex& v: V)
-			ret.m_vertices.emplace_back(v);
+		Graph ret;
+		ret.m_vertices = V.getVertices();
+		Edges E;
 
 		for(const Edge& e: m_edges)
 		{
@@ -242,24 +205,15 @@ public:
 
 			for (size_t i = 0; i < V.size(); ++i)
 			{
-				size_t posFirst = 0;
-				size_t posSecond = 0;
-
 				if (V[i] == e.first)
-				{
-					posFirst = i;
 					findFirst = true;
-				}
 			
 				if (V[i] == e.second)
-				{
-					posSecond = i;
 					findSecond = true;
-				}
 			
 				if (findFirst && findSecond)
 				{
-					ret.m_edges.emplace_back(makeEdge(ret.m_vertices[posFirst], ret.m_vertices[posSecond]));
+					ret.m_edges.emplace_back(e);
 					break;
 				}
 			}
@@ -268,41 +222,38 @@ public:
 		return ret;
 	}
 
-	size_t size(void) const { return m_vertices.size(); }
+	VertexSet getNeighborsOf(const Vertex& vi) const
+	{
+		VertexSet neighbors;
 
-	//VertexSet getNeighborsOf(const Vertex& vi) const
-	//{
-	//	VertexSet neighbors;
-//
-	//	for (const Edge& e : m_edges)
-	//	{
-	//		if (e.first == vi)
-	//			neighbors.emplace_back(e.second);
-	//		else if (e.second == vi)
-	//			neighbors.emplace_back(e.first);
-	//	}
-//
-	//	return neighbors;
-	//}
+		for (const Edge& e : m_edges)
+		{
+			if (e.first == vi)
+				neighbors.emplace_back(e.second);
+			else if (e.second == vi)
+				neighbors.emplace_back(e.first);
+		}
+
+		return neighbors;
+	}
 
 	VertexDegreePairs computeDegrees(void) const
 	{
 		VertexDegreePairs ret;	ret.reserve(m_vertices.size());
-	
-		for (const Vertex& v : m_vertices)
-			ret.emplace_back(&v, v.neighbors.size());
-	
+
+		for (const Vertex v : m_vertices)
+			ret.emplace_back(v, computeDegreeForVertex(v));
+
 		return ret;
 	}
 
-	//TODO: ne plus utiliser l'ensemble des arrêtes mais uniquement les voisins
-	void removeVertex(const Vertex& v)
+	void removeVertex(const Vertex v)
 	{
 		size_t vPosInVertices = 0;
 
 		for (size_t i = 0; i < m_vertices.size(); ++i)
 		{
-			if (m_vertices[i].vertex == v)
+			if (m_vertices[i] == v)
 			{
 				vPosInVertices = i;
 				break;
@@ -319,10 +270,10 @@ public:
 			//On présèrve l'ordre des vertex
 			//TODO: est-ce vraiment nécessaire ? Le profiler windows n'affichait même pas l'utilisation de orderWith
 			//comme importante pour le CPU ?
-			//for (size_t i = vPosInVertices; i < m_vertices.size() - 1; ++i)
-			//{ m_vertices[i] = m_vertices[i+1]; }
+			for (size_t i = vPosInVertices; i < m_vertices.size() - 1; ++i)
+			{ m_vertices[i] = m_vertices[i+1]; }
 
-			//m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
+			m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
 
 			size_t graphSize = m_edges.size();
 			for (size_t i = 0; i < graphSize; ++i)
@@ -340,24 +291,71 @@ public:
 		}
 	}
 
-	//size_t size(void) const { return m_vertices.size(); }
-	//bool empty(void) const { return m_vertices.empty(); }
+	size_t size(void) const { return m_vertices.size(); }
+	bool empty(void) const { return m_vertices.empty(); }
 
-	//const Vertices& getVertices(void) const { return m_vertices; }
-	const Vertices getVertices(void) const { return m_vertices; }
+	const Vertices& getVertices(void) const { return m_vertices; }
+	const VertexSet getVertexSet(void) const { return m_vertices; }
 	const Edges& getEdges(void) const { return m_edges; }
 
 private:
-	//unsigned int computeDegreeForVertex(const Vertex v) const
-	//{
-	//	unsigned int degreeOfV = 0;
-	//	for (const Edge& e : m_edges)
-	//	{
-	//		if ((e.first == v) || (e.second == v))
-	//			++degreeOfV;
-	//	}
-	//	return degreeOfV;
-	//}
+	void rebuildVerticesSet(void)
+	{
+		Vertices temp = std::move(m_vertices);
+
+		for (const Edge& e : m_edges)
+		{
+			bool foundFirst = false;
+			bool foundSecond = false;
+
+			for (const Vertex v : m_vertices)
+			{
+				if (e.first == v)
+					foundFirst = true;
+
+				if (e.second == v)
+					foundSecond = true;
+
+				if (foundFirst && foundSecond)
+					break;
+			}
+
+			if (!foundFirst)
+				m_vertices.emplace_back(e.first);
+
+			if (!foundSecond)
+				m_vertices.emplace_back(e.second);
+		}
+
+		//Ajout des sommets qui ne sont reliés a aucune arrêtes
+		for (const Vertex& v : temp)
+		{
+			bool canAdd = true;
+
+			for (const Edge& e : m_edges)
+			{
+				if ((e.first == v) || (e.second == v))
+				{
+					canAdd = false;
+					break;
+				}
+			}
+
+			if (canAdd)
+				m_vertices.emplace_back(v);
+		}
+	}
+
+	unsigned int computeDegreeForVertex(const Vertex v) const
+	{
+		unsigned int degreeOfV = 0;
+		for (const Edge& e : m_edges)
+		{
+			if ((e.first == v) || (e.second == v))
+				++degreeOfV;
+		}
+		return degreeOfV;
+	}
 
 private:
 	Edges		m_edges;//Les arrêtes
@@ -366,7 +364,7 @@ private:
 
 std::ostream& operator<< (std::ostream& stream, const Vertex& v)
 {
-	stream << "(" << v.vertex->n << ", " << v.vertex->w << ")";
+	stream << "(" << v->n << ", " << v->w << ")";
 	return stream;
 }
 
@@ -376,7 +374,7 @@ std::ostream& operator<< (std::ostream& stream, const Edge& edge)
 	return stream;
 }
 
-std::ostream& operator<< (std::ostream& stream, const Vertices& vs)
+std::ostream& operator<< (std::ostream& stream, const VertexSet& vs)
 {
 	std::cout << "{ ";
 	for (size_t i = 0; i < vs.size(); ++i)
@@ -386,9 +384,9 @@ std::ostream& operator<< (std::ostream& stream, const Vertices& vs)
 	return stream;
 }
 
-std::ostream& operator<< (std::ostream& stream, const VerticesSet& VS)
+std::ostream& operator<< (std::ostream& stream, const VertexSets& VS)
 {
-	for (const Vertices& vs : VS)
+	for (const VertexSet& vs : VS)
 		stream << vs << std::endl;
 
 	return stream;

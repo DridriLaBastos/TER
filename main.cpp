@@ -26,20 +26,20 @@ InitReturnType initialize(const Graph& G, Weight lb)
 
 	for (size_t i = 0; i < G.size(); ++i)
 	{
-		const VertexDegreePair& vi = degrees.back();
+		const VertexDegreePair* vi = &degrees.back();
 
-		if (vi.d == degrees.size() - 1)
+		if (vi->d == degrees.size() - 1)
 		{
 			//Order U arbitrarily as vi, v_(i+1), v_(i+2)...
 			std::sort(degrees.begin(), degrees.end(),
-				[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.v->vertex->n < b.v->vertex->n; });
+				[](const VertexDegreePair& a, const VertexDegreePair& b) { return a.v->n < b.v->n; });
 
 			for (const auto& vdp : degrees)
 			{
 				//On ajoute tous les sommets dans O0
-				O0.emplace_back(vdp.v->vertex);
+				O0.emplace_back(vdp.v);
 				//Les sommets restant font partis de la clique initial C0
-				C0.emplace_back(*vdp.v);
+				C0.emplace_back(vdp.v);
 			}
 			break;
 		}
@@ -47,13 +47,13 @@ InitReturnType initialize(const Graph& G, Weight lb)
 		//U <- U\{vi} fait plus tard car on a besoin de vi ensuite
 
 		//For each neighbors v of vi: deg(v) -= 1
-		const VerticesStruct& neighbors = vi.v->neighbors;
+		const VertexSet& neighbors = G.getNeighborsOf(vi->v);
 
 		for (const Vertex& neighbor: neighbors)
 		{
 			for (size_t i = 0; i < degrees.size(); ++i)
 			{
-				if (degrees[i].v->vertex == neighbor)
+				if (degrees[i].v == neighbor)
 				{
 					--degrees[i].d;
 
@@ -66,7 +66,7 @@ InitReturnType initialize(const Graph& G, Weight lb)
 		}
 
 		//O0 est l'ensemble des sommets dans l'ordre avec lequel ils sont trouv�s par cette fonction
-		O0.emplace_back(vi.v->vertex);
+		O0.emplace_back(vi->v);
 		//U <- U\{vi} Cette ligne arrive à la fin car on a besoin de vi avant
 		degrees.pop_back();
 	}
@@ -74,9 +74,9 @@ InitReturnType initialize(const Graph& G, Weight lb)
 	if (C0.weight() > lb)
 		lb = C0.weight();
 
-	for (const Vertex& v : G)
+	for (const Vertex& v : G.getVertices())
 	{
-		Weight w_s = Vertices(v.neighbors).weight() + v.vertex->w;
+		Weight w_s = VertexSet(G.getNeighborsOf(v)).weight() + v->w;
 
 		if (w_s <= lb)
 			Gp.removeVertex(v);
@@ -85,21 +85,21 @@ InitReturnType initialize(const Graph& G, Weight lb)
 }
 
 //TODO: Eliminer les copies innutiles ?
-Vertices getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
+VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 {
-	Vertices B;
-	VerticesSet PI;
-	Vertices V = G.getVertices();   V.orderWith(O);
-
+	VertexSet B;
+	VertexSets PI;
+	VertexSet V = G.getVertexSet();
+	V.orderWith(O);
 	for (size_t i = V.size() - 1; i < V.size(); --i)
 	{
 		const Vertex& v = V[i];
 
 		const auto found = std::find_if(PI.begin(), PI.end(),
-			[&](Vertices& d)
+			[&](VertexSet& d)
 			{
 				/** test l'intersection entre les sommets déjà dans d et les voisins de v **/
-				for (const Vertex& vertex : v.neighbors)
+				for (const Vertex& vertex : G.getNeighborsOf(v))
 				{
 					for (size_t i = 0; i < d.size(); ++i)
 					{
@@ -116,7 +116,7 @@ Vertices getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 		{
 			Weight sum = 0;
 			found->emplace_back(v);
-			std::for_each(PI.begin(), PI.end(), [&sum](const Vertices& vs) { sum += vs.getMaxWeight(); });
+			std::for_each(PI.begin(), PI.end(), [&sum](const VertexSet& vs) { sum += vs.getMaxWeight(); });
 
 			if (sum > t)
 			{
@@ -126,8 +126,8 @@ Vertices getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 		}
 		else
 		{
-			Weight sum = v.vertex->w;
-			std::for_each(PI.begin(), PI.end(), [&sum](const Vertices& vs) { sum += vs.getMaxWeight(); });
+			Weight sum = v->w;
+			std::for_each(PI.begin(), PI.end(), [&sum](const VertexSet& vs) { sum += vs.getMaxWeight(); });
 
 			if (sum <= t)
 				PI.emplace_back(Vertices{ v });
@@ -145,24 +145,24 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 	if (G.empty())
 		return C;
 
-	Vertices B = getBranches(G, Cmax.weight() - C.weight(), O);
+	VertexSet B = getBranches(G, Cmax.weight() - C.weight(), O);
 	if (B.empty())
 		return Cmax;
 
-	Vertices A = G.getVertices();
+	VertexSet A = G.getVertexSet();
 	A.remove(B);
 	B.orderWith(O);
 
 	for (size_t i = B.size() - 1; i < B.size(); --i)
 	{
-		const Vertices& BSubset = B.subSet(i + 1, B.size() - 1);
-		const Vertices& unionWithA = Vertices::unionBetween(A, BSubset);
-		const Vertices& neighbors = B[i].neighbors;
-		Vertices P(Vertices::intersectionBetween(neighbors, unionWithA));
+		const VertexSet& BSubset = B.subSet(i + 1, B.size() - 1);
+		const VertexSet& unionWithA = VertexSet::unionBetween(A, BSubset);
+		const VertexSet& neighbors = G.getNeighborsOf(B[i]);
+		VertexSet P(VertexSet::intersectionBetween(neighbors, unionWithA));
 
-		if (Vertices::unionBetween(C, B[i]).weight() + P.weight() > Cmax.weight())
+		if (VertexSet::unionBetween(C, B[i]).weight() + P.weight() > Cmax.weight())
 		{
-			Clique Cp = searchMaxWClique(G[P], Cmax, Vertices::unionBetween(C, B[i]), O);
+			Clique Cp = searchMaxWClique(G[P], Cmax, VertexSet::unionBetween(C, B[i]), O);
 
 			if (Cp.weight() > Cmax.weight())
 				Cmax = Cp;
@@ -176,20 +176,20 @@ Clique WLMC(const Graph& G)
 	const auto start = std::chrono::steady_clock::now();
 	InitReturnType i = initialize(G, 0);
 	Clique Cmax = i.C0;
-	Vertices Vp = i.Gp.getVertices();
+	VertexSet Vp = i.Gp.getVertexSet();
 	Vp.orderWith(i.O0);
 
 	for (size_t j = Vp.size() - 1; j < Vp.size(); --j)
 	{
 		const Vertex& vi = Vp[j];
-		Vertices P = Vertices::intersectionBetween(vi.neighbors, Vp.subSet(j + 1, Vp.size() - 1));
+		VertexSet P = VertexSet::intersectionBetween(vi->neighbors, Vp.subSet(j + 1, Vp.size() - 1));
 
-		if ((P.weight() + vi.vertex->w) > Cmax.weight())
+		if ((P.weight() + vi->w) > Cmax.weight())
 		{
-			InitReturnType ip = initialize(G[P], Cmax.weight() - vi.vertex->w);
+			InitReturnType ip = initialize(G[P], Cmax.weight() - vi->w);
 
-			if ((ip.C0.weight() + vi.vertex->w) > Cmax.weight())
-				Cmax = Vertices::unionBetween(ip.C0, vi);
+			if ((ip.C0.weight() + vi->w) > Cmax.weight())
+				Cmax = VertexSet::unionBetween(ip.C0, vi);
 
 			Clique Cp = searchMaxWClique(ip.Gp, Cmax, { {vi} }, ip.O0);
 
@@ -213,8 +213,8 @@ static bool isClique (const Clique& c, const Edges& edges)
 
 			for (const Edge& e: edges)
 			{
-				if (((e.first == c[i].vertex) && (e.second == c[j].vertex)) || 
-					((e.first == c[j].vertex) && (e.second == c[i].vertex)))
+				if (((e.first == c[i]) && (e.second == c[j])) || 
+					((e.first == c[j]) && (e.second == c[i])))
 				{
 					found = true;
 					break;
@@ -260,7 +260,7 @@ int main(int argc, const char** argv)
 	std::pair<Vertices, Edges> pair = reader.readFile(container);
 
 	Clique Cmax = WLMC(Graph(pair.first,pair.second));
-	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a.vertex->n < b.vertex->n; });
+	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
 	std::cout << Cmax << " weight: " << Cmax.weight() << std::endl;
 	std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
 
