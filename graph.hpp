@@ -21,11 +21,12 @@ using VertexContainer = std::vector<std::unique_ptr<VertexStruct>>;
 
 struct GraphVertex
 {
-	VertexStruct* vertex;
-	std::vector<GraphVertex*> neighbors;
+	const VertexStruct* vertex;
+	std::vector<const GraphVertex*> neighbors;
+	GraphVertex(const VertexStruct* const v = nullptr, const std::vector<const GraphVertex*>& n = {}): vertex(v), neighbors(n) {}
 };
 
-using Vertex = GraphVertex*;
+using Vertex = const GraphVertex*;
 using Vertices = std::vector<Vertex>;
 
 using GraphVertices = std::vector<GraphVertex>;
@@ -44,7 +45,7 @@ bool operator==(const GraphVertex& v1, const GraphVertex& v2) { return v1.vertex
 
 static void connect(GraphVertex& a, GraphVertex& b)
 {
-	auto found = std::find(a.neighbors.begin(), a.neighbors.end(), b);
+	auto found = std::find(a.neighbors.begin(), a.neighbors.end(), &b);
 
 	//On connect deux sommets que s'ils ne sont pas déjà connectés
 	if (found == a.neighbors.end())
@@ -74,6 +75,13 @@ class VertexSet
 {
 public:
 	VertexSet(const Vertices& vertices = {}) : m_vertices(vertices) {}
+	VertexSet(const GraphVertices& vertices)
+	{
+		m_vertices.reserve(vertices.size());
+
+		for (const GraphVertex& v: vertices)
+			m_vertices.emplace_back(&v);
+	}
 
 public:
 	void emplace_back(const Vertex& v) { m_vertices.emplace_back(v); }
@@ -250,31 +258,32 @@ public:
 		return ret;
 	}
 
-	VertexSet getNeighborsOf(const Vertex& vi) const
-	{
-		VertexSet neighbors;
-
-		for (const Edge& e : m_edges)
-		{
-			if (e.first == vi)
-				neighbors.emplace_back(e.second);
-			else if (e.second == vi)
-				neighbors.emplace_back(e.first);
-		}
-
-		return neighbors;
-	}
+	//VertexSet getNeighborsOf(const Vertex& vi) const
+	//{
+	//	VertexSet neighbors;
+//
+	//	for (const Edge& e : m_edges)
+	//	{
+	//		if (e.first == vi)
+	//			neighbors.emplace_back(e.second);
+	//		else if (e.second == vi)
+	//			neighbors.emplace_back(e.first);
+	//	}
+//
+	//	return neighbors;
+	//}
 
 	VertexDegreePairs computeDegrees(void) const
 	{
 		VertexDegreePairs ret;	ret.reserve(m_vertices.size());
 	
 		for (const GraphVertex& v : m_vertices)
-			ret.emplace_back(v, v.neighbors.size());
+			ret.emplace_back(&v, v.neighbors.size());
 	
 		return ret;
 	}
 
+	//TODO: ne plus utiliser l'ensemble des arrêtes mais uniquement les voisins
 	void removeVertex(const GraphVertex& v)
 	{
 		size_t vPosInVertices = 0;
@@ -308,7 +317,7 @@ public:
 			{
 				Edge& currentEdge = m_edges[i];
 
-				if ((currentEdge.first == v) || (currentEdge.second == v))
+				if ((currentEdge.first->vertex == v.vertex) || (currentEdge.second->vertex == v.vertex))
 				{
 					std::swap(m_edges[i], m_edges.back());
 					m_edges.pop_back();
@@ -323,7 +332,7 @@ public:
 	bool empty(void) const { return m_vertices.empty(); }
 
 	//const Vertices& getVertices(void) const { return m_vertices; }
-	//const VertexSet getVertexSet(void) const { return m_vertices; }
+	const VertexSet getVertexSet(void) const { return m_vertices; }
 	const Edges& getEdges(void) const { return m_edges; }
 
 private:

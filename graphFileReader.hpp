@@ -18,9 +18,9 @@ class GraphFileReader
 				throw std::logic_error("ERROR: cannot open '" + path + "'");
 		}
 
-		std::pair<Vertices,Edges> readFile (VertexContainer& container)
+		std::pair<GraphVertices,Edges> readFile (VertexContainer& container)
 		{
-			std::pair<Vertices,Edges> ret;
+			std::pair<GraphVertices,Edges> ret;
 			ret.first.reserve(1000000);   ret.second.reserve(1000000);
 			container.clear();
 			container.resize(1000000);
@@ -49,37 +49,40 @@ class GraphFileReader
 		void passComment(void)
 		{ m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n'); };
 
-		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container) const
+		GraphVertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, GraphVertices& vertices, VertexContainer& container) const
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())
+			{
 				container.resize(container.size() * 2);
+				vertices.resize(container.size());
+			}
 			
 			if (container[vertexNumber].get() == nullptr)
 			{
 				container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber));
-				vertices.emplace_back(container[vertexNumber].get());
+				vertices[vertexNumber].vertex = container[vertexNumber].get();
 			}
 
-			return container[vertexNumber].get();
+			return vertices[vertexNumber];
 		}
 
-		void findEdgeFromVerticesAndEmplaceIfNot(const Vertex& v1, const Vertex&v2, Edges& edges) const
+		void findEdgeFromVerticesAndEmplaceIfNot(GraphVertex& v1, GraphVertex& v2, Edges& edges) const
 		{
 			//Si une arête existe entre ces sommets, alors chacun des sommets à l'autre dans ses voisins. Pour vérifier
 			//si une arrête existe ou pas, il suffit donc de chercher un des sommets dans la liste des voisins de l'autre.
 			//Il n'y a pas besoin de tester les deux listes de voisins que si un sommet est dans les voisins d'un autre
 			//les deux sont forcément voisin l'un de l'autre (voir makeEdge)
 			//Wouah *_*
-			auto found = std::find_if(v1->neighbors.begin(), v1->neighbors.end(),
-				[&v2](const Vertex& vs)
-				{ return vs == v2; });
+			auto found = std::find_if(v1.neighbors.begin(), v1.neighbors.end(),
+				[&v2](const GraphVertex* vs)
+				{ return vs->vertex == v2.vertex; });
 			
-			if (found == v1->neighbors.end())
+			if (found == v1.neighbors.end())
 				edges.emplace_back(makeEdge(v1,v2));
 		}
 
-		void parseLine(std::pair<Vertices,Edges>& pair, VertexContainer& container)
+		void parseLine(std::pair<GraphVertices,Edges>& pair, VertexContainer& container)
 		{
 			unsigned int n1 = 0;
 			unsigned int n2 = 0;
@@ -90,8 +93,8 @@ class GraphFileReader
 			m_stream.getline(line,127);
 			extractUInt(line,n1,n2);
 			
-			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
-			const Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
+			GraphVertex& v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
+			GraphVertex& v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
 
 			//Une fois que l'on a trouvé les vertex correspondant aux valeurs que l'on a lu du fichier,
 			//il faut vérifier que l'arrête qu'ils forment n'existe pas déjà car rien ne garantit

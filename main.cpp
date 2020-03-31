@@ -47,7 +47,7 @@ InitReturnType initialize(const Graph& G, Weight lb)
 		//U <- U\{vi} fait plus tard car on a besoin de vi ensuite
 
 		//For each neighbors v of vi: deg(v) -= 1
-		const VertexSet& neighbors = G.getNeighborsOf(vi->v);
+		const VertexSet& neighbors = vi->v->neighbors;
 
 		for (const Vertex& neighbor: neighbors)
 		{
@@ -99,7 +99,7 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 			[&](VertexSet& d)
 			{
 				/** test l'intersection entre les sommets déjà dans d et les voisins de v **/
-				for (const Vertex& vertex : G.getNeighborsOf(v))
+				for (const Vertex& vertex : v->neighbors)
 				{
 					for (size_t i = 0; i < d.size(); ++i)
 					{
@@ -126,7 +126,7 @@ VertexSet getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 		}
 		else
 		{
-			Weight sum = v->w;
+			Weight sum = v->vertex->w;
 			std::for_each(PI.begin(), PI.end(), [&sum](const VertexSet& vs) { sum += vs.getMaxWeight(); });
 
 			if (sum <= t)
@@ -157,7 +157,7 @@ Clique searchMaxWClique(const Graph& G, Clique Cmax, const Clique& C, const Vert
 	{
 		const VertexSet& BSubset = B.subSet(i + 1, B.size() - 1);
 		const VertexSet& unionWithA = VertexSet::unionBetween(A, BSubset);
-		const VertexSet& neighbors = G.getNeighborsOf(B[i]);
+		const VertexSet& neighbors = B[i]->neighbors;
 		VertexSet P(VertexSet::intersectionBetween(neighbors, unionWithA));
 
 		if (VertexSet::unionBetween(C, B[i]).weight() + P.weight() > Cmax.weight())
@@ -184,11 +184,11 @@ Clique WLMC(const Graph& G)
 		const Vertex& vi = Vp[j];
 		VertexSet P = VertexSet::intersectionBetween(vi->neighbors, Vp.subSet(j + 1, Vp.size() - 1));
 
-		if ((P.weight() + vi->w) > Cmax.weight())
+		if ((P.weight() + vi->vertex->w) > Cmax.weight())
 		{
-			InitReturnType ip = initialize(G[P], Cmax.weight() - vi->w);
+			InitReturnType ip = initialize(G[P], Cmax.weight() - vi->vertex->w);
 
-			if ((ip.C0.weight() + vi->w) > Cmax.weight())
+			if ((ip.C0.weight() + vi->vertex->w) > Cmax.weight())
 				Cmax = VertexSet::unionBetween(ip.C0, vi);
 
 			Clique Cp = searchMaxWClique(ip.Gp, Cmax, { {vi} }, ip.O0);
@@ -257,10 +257,10 @@ int main(int argc, const char** argv)
 	VertexContainer container;
 
 	GraphFileReader reader (argv[1]);
-	std::pair<Vertices, Edges> pair = reader.readFile(container);
+	std::pair<GraphVertices, Edges> pair = reader.readFile(container);
 
 	Clique Cmax = WLMC(Graph(pair.first,pair.second));
-	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
+	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->vertex->n < b->vertex->n; });
 	std::cout << Cmax << " weight: " << Cmax.weight() << std::endl;
 	std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
 
