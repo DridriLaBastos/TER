@@ -210,6 +210,11 @@ public:
 	Graph(void) {}
 	Graph(const GraphVertices& vertices, const Edges& edges) : m_vertices(vertices), m_edges(edges) {}
 
+	Graph(const Graph& G)
+	{
+
+	}
+
 public:
 	GraphVertices::iterator begin(void) { return m_vertices.begin(); }
 	GraphVertices::const_iterator begin(void) const { return m_vertices.begin(); }

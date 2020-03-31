@@ -18,12 +18,11 @@ class GraphFileReader
 				throw std::logic_error("ERROR: cannot open '" + path + "'");
 		}
 
-		std::pair<GraphVertices,Edges> readFile (VertexContainer& container)
+		void readFile (std::pair<GraphVertices, Edges>& pair, VertexContainer& container)
 		{
-			std::pair<GraphVertices,Edges> ret;
-			ret.first.reserve(1000000);   ret.second.reserve(1000000);
-			container.clear();
-			container.resize(1000000);
+			pair.first.clear();   pair.second.clear();   container.clear();   m_vertexToGraphVertexPtr.clear();
+			pair.first.reserve(1000000);   pair.second.reserve(1000000);
+			container.resize(1000000);   m_vertexToGraphVertexPtr.resize(1000000);
 
 			std::cout << "Begin reading... ";
 			auto begin = std::chrono::system_clock::now();
@@ -32,39 +31,39 @@ class GraphFileReader
 				if ((char)m_stream.peek() == '%')
 					passComment();
 				else
-					parseLine(ret,container);
+					parseLine(pair,container);
 				
 			} while (!m_stream.eof());
 			auto end = std::chrono::system_clock::now();
 
 			std::cout << "took: " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "s" << std::endl;
 
-			ret.first.shrink_to_fit();
-			ret.second.shrink_to_fit();
+//			pair.first.shrink_to_fit();
+//			pair.second.shrink_to_fit();
 			container.shrink_to_fit();
-			return ret;
 		}
 	
 	private:
 		void passComment(void)
 		{ m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n'); };
 
-		GraphVertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, GraphVertices& vertices, VertexContainer& container) const
+		GraphVertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, GraphVertices& vertices, VertexContainer& container)
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())
 			{
 				container.resize(container.size() * 2);
-				vertices.resize(container.size());
+				m_vertexToGraphVertexPtr.resize(container.size());
 			}
 			
 			if (container[vertexNumber].get() == nullptr)
 			{
 				container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber));
-				vertices[vertexNumber].vertex = container[vertexNumber].get();
+				vertices.emplace_back(container[vertexNumber].get());
+				m_vertexToGraphVertexPtr[vertexNumber] = &vertices.back();
 			}
 
-			return vertices[vertexNumber];
+			return *m_vertexToGraphVertexPtr[vertexNumber];
 		}
 
 		void findEdgeFromVerticesAndEmplaceIfNot(GraphVertex& v1, GraphVertex& v2, Edges& edges) const
@@ -129,6 +128,7 @@ class GraphFileReader
 
 	private:
 		std::ifstream m_stream;
+		std::vector<GraphVertex*> m_vertexToGraphVertexPtr;
 };
 
 #endif

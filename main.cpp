@@ -257,9 +257,12 @@ int main(int argc, const char** argv)
 	VertexContainer container;
 
 	GraphFileReader reader (argv[1]);
-	std::pair<GraphVertices, Edges> pair = reader.readFile(container);
+	std::pair<GraphVertices, Edges> pair;
+	reader.readFile(pair,container);
 
-	Clique Cmax = WLMC(Graph(pair.first,pair.second));
+	Graph G(pair.first, pair.second);
+
+	Clique Cmax = WLMC(G);
 	std::sort(Cmax.begin(),Cmax.end(),[](const Vertex& a, const Vertex& b) { return a->vertex->n < b->vertex->n; });
 	std::cout << Cmax << " weight: " << Cmax.weight() << std::endl;
 	std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
