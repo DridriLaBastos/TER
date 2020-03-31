@@ -135,7 +135,7 @@ public:
 		{
 			for (size_t j = vPos; j < m_vertices.size(); ++j)
 			{
-				if (m_vertices[j] == O[i])
+				if (m_vertices[j] == O[vPos])
 					std::swap(m_vertices[vPos++], m_vertices[j]);
 			}
 		}
@@ -149,7 +149,7 @@ public:
 		{
 			subset.reserve(end - begin + 1);//+1: index depuis 0
 
-			for (size_t i = begin; i <= end; ++i)
+			for (size_t i = begin; i <= std::min(end,m_vertices.size()-1); ++i)
 				subset.emplace_back(m_vertices[i]);
 		}
 		return subset;
