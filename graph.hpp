@@ -7,7 +7,7 @@
 #include <iostream>
 #include <algorithm>
 
-using Weight = float;
+using Weight = int;
 
 struct VertexStruct
 {
@@ -270,10 +270,11 @@ public:
 			//On présèrve l'ordre des vertex
 			//TODO: est-ce vraiment nécessaire ? Le profiler windows n'affichait même pas l'utilisation de orderWith
 			//comme importante pour le CPU ?
-			for (size_t i = vPosInVertices; i < m_vertices.size() - 1; ++i)
-			{ m_vertices[i] = m_vertices[i+1]; }
-
-			m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
+			//for (size_t i = vPosInVertices; i < m_vertices.size() - 2; ++i)
+			//{ m_vertices[i] = m_vertices[i+1]; }
+			//
+			//if (!m_vertices.empty())
+			//	m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
 
 			size_t graphSize = m_edges.size();
 			for (size_t i = 0; i < graphSize; ++i)
