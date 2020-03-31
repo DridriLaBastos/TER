@@ -19,6 +19,8 @@
 *.dSYM
 *.json
 graphs/*
+temp.cpp
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

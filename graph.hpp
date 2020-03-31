@@ -20,7 +20,7 @@ struct VertexStruct
 	VertexStruct(const VertexStruct& vs) { n = vs.n; w = vs.w; std::cout << "VertexStruct copy!\n"; }
 };
 
-using VertexContainer = std::vector<std::unique_ptr<VertexStruct>>;
+using VertexStructContainer = std::vector<std::unique_ptr<VertexStruct>>;
 using VertexStructPtr = const VertexStruct*;
 using VerticesStruct = std::vector<VertexStructPtr>;
 using VertexOrdering = VerticesStruct;
@@ -44,7 +44,7 @@ using VertexVector = std::vector<Vertex>;
 //using Vertex = VertexStruct*;
 //using Vertices = std::vector<Vertex>;
 
-using Edge = std::pair<Vertex, Vertex>;
+using Edge = std::pair<VertexStructPtr, VertexStructPtr>;
 using Edges = std::vector<Edge>;
 
 static void connect(Vertex a, Vertex b)
@@ -62,7 +62,7 @@ static void connect(Vertex a, Vertex b)
 static Edge makeEdge(const Vertex& a, const Vertex& b)
 {
 	connect(a, b);
-	return std::make_pair(a, b);
+	return std::make_pair(a.vertex, b.vertex);
 }
 
 struct VertexDegreePair

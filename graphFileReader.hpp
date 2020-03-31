@@ -18,7 +18,7 @@ class GraphFileReader
 				throw std::logic_error("ERROR: cannot open '" + path + "'");
 		}
 
-		std::pair<Vertices,Edges> readFile (VertexContainer& container)
+		std::pair<Vertices,Edges> readFile (VertexStructContainer& container)
 		{
 			std::pair<Vertices,Edges> ret;
 			m_vertexPtrToVertexStruct.clear();   container.clear();
@@ -49,7 +49,7 @@ class GraphFileReader
 		void passComment(void)
 		{ m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n'); };
 
-		Vertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container)
+		Vertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexStructContainer& container)
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())
@@ -83,7 +83,7 @@ class GraphFileReader
 				edges.emplace_back(makeEdge(v1,v2));
 		}
 
-		void parseLine(std::pair<Vertices,Edges>& pair, VertexContainer& container)
+		void parseLine(std::pair<Vertices,Edges>& pair, VertexStructContainer& container)
 		{
 			unsigned int n1 = 0;
 			unsigned int n2 = 0;
