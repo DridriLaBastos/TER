@@ -26,9 +26,9 @@ InitReturnType initialize(const Graph& G, Weight lb)
 
 	for (size_t i = 0; i < G.size(); ++i)
 	{
-		const VertexDegreePair* vi = &degrees.back();
+		const VertexDegreePair& vi = degrees.back();
 
-		if (vi->d == degrees.size() - 1)
+		if (vi.d == degrees.size() - 1)
 		{
 			//Order U arbitrarily as vi, v_(i+1), v_(i+2)...
 			std::sort(degrees.begin(), degrees.end(),
@@ -47,7 +47,7 @@ InitReturnType initialize(const Graph& G, Weight lb)
 		//U <- U\{vi} fait plus tard car on a besoin de vi ensuite
 
 		//For each neighbors v of vi: deg(v) -= 1
-		const VerticesStruct& neighbors = vi->v->neighbors;
+		const VerticesStruct& neighbors = vi.v->neighbors;
 
 		for (const Vertex& neighbor: neighbors)
 		{
@@ -66,7 +66,7 @@ InitReturnType initialize(const Graph& G, Weight lb)
 		}
 
 		//O0 est l'ensemble des sommets dans l'ordre avec lequel ils sont trouv�s par cette fonction
-		O0.emplace_back(vi->v->vertex);
+		O0.emplace_back(vi.v->vertex);
 		//U <- U\{vi} Cette ligne arrive à la fin car on a besoin de vi avant
 		degrees.pop_back();
 	}
