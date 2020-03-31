@@ -21,9 +21,9 @@ class GraphFileReader
 		std::pair<Vertices,Edges> readFile (VertexContainer& container)
 		{
 			std::pair<Vertices,Edges> ret;
+			m_vertexPtrToVertexStruct.clear();   container.clear();
 			ret.first.reserve(1000000);   ret.second.reserve(1000000);
-			container.clear();
-			container.resize(1000000);
+			container.resize(1000000);   m_vertexPtrToVertexStruct.resize(1000000);
 
 			std::cout << "Begin reading... ";
 			auto begin = std::chrono::system_clock::now();
@@ -49,19 +49,23 @@ class GraphFileReader
 		void passComment(void)
 		{ m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n'); };
 
-		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container) const
+		Vertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container)
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())
-				container.resize(container.size() * 2);
+			{
+				container.resize(container.size() + 100000);
+				m_vertexPtrToVertexStruct.resize(container.size());
+			}
 			
 			if (container[vertexNumber].get() == nullptr)
 			{
 				container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber));
 				vertices.emplace_back(container[vertexNumber].get());
+				m_vertexPtrToVertexStruct[vertexNumber]->vertex = container[vertexNumber].get();
 			}
 
-			return container[vertexNumber].get();
+			return *m_vertexPtrToVertexStruct[vertexNumber];
 		}
 
 		void findEdgeFromVerticesAndEmplaceIfNot(const Vertex& v1, const Vertex&v2, Edges& edges) const
@@ -71,11 +75,11 @@ class GraphFileReader
 			//Il n'y a pas besoin de tester les deux listes de voisins que si un sommet est dans les voisins d'un autre
 			//les deux sont forcément voisin l'un de l'autre (voir makeEdge)
 			//Wouah *_*
-			auto found = std::find_if(v1->neighbors.begin(), v1->neighbors.end(),
+			auto found = std::find_if(v1.neighbors.begin(), v1.neighbors.end(),
 				[&v2](const Vertex& vs)
 				{ return vs == v2; });
 			
-			if (found == v1->neighbors.end())
+			if (found == v1.neighbors.end())
 				edges.emplace_back(makeEdge(v1,v2));
 		}
 
@@ -90,8 +94,8 @@ class GraphFileReader
 			m_stream.getline(line,127);
 			extractUInt(line,n1,n2);
 			
-			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
-			const Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
+			const Vertex& v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
+			const Vertex& v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
 
 			//Une fois que l'on a trouvé les vertex correspondant aux valeurs que l'on a lu du fichier,
 			//il faut vérifier que l'arrête qu'ils forment n'existe pas déjà car rien ne garantit
@@ -103,6 +107,17 @@ class GraphFileReader
 	private:
 		static void extractUInt(const char* str, unsigned int& n1, unsigned int& n2)
 		{
+			if(!std::isdigit(*str))
+			{
+				if (*str == 'e')
+				{
+					while (!std::isdigit(*str))
+						++str;
+				}
+				else
+					return;
+			}
+
 			//exctraction du premier nombre
 			while (std::isdigit(*str))
 			{
@@ -126,6 +141,7 @@ class GraphFileReader
 
 	private:
 		std::ifstream m_stream;
+		std::vector<Vertex*> m_vertexPtrToVertexStruct;
 };
 
 #endif
