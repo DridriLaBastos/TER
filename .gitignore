@@ -18,6 +18,7 @@
 *.out
 *.dSYM
 *.json
+temp.cpp
 graphs/*
 # Build results
 [Dd]ebug/

@@ -18,15 +18,46 @@ class GraphFileReader
 				throw std::logic_error("ERROR: cannot open '" + path + "'");
 		}
 
-		std::pair<Vertices,Edges> readFile (VertexContainer& container)
+		std::pair<Vertices,Edges> readFile (VertexContainer& container, const bool evryFormated = false)
 		{
 			std::pair<Vertices,Edges> ret;
-			ret.first.reserve(1000000);   ret.second.reserve(1000000);
 			container.clear();
-			container.resize(1000000);
+
+			if (!evryFormated)
+			{
+				ret.first.reserve(1000000);   ret.second.reserve(1000000);
+				container.resize(1000000);
+			}
 
 			std::cout << "Begin reading... ";
 			auto begin = std::chrono::system_clock::now();
+
+			if (evryFormated)
+			{
+				char line[127];
+				m_stream.getline(line,127);
+				const size_t vertexSize = extractUInt(line);
+				ret.first.reserve(vertexSize);   ret.second.reserve(vertexSize);
+				container.resize(vertexSize);
+
+				for (size_t i = 0; i < vertexSize; ++i)
+				{
+					const unsigned int vertexNumber = i + 1;
+					m_stream.getline(line,127);
+					const unsigned int weight = extractUInt(line);
+
+					if (vertexNumber >= container.size())
+						container.resize(container.size() + 100000);
+			
+					if (container[vertexNumber].get() == nullptr)
+					{
+						container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber,{(int)weight}));
+						ret.first.emplace_back(container[vertexNumber].get());
+					}
+				}
+				
+			}
+
 			do
 			{
 				if ((char)m_stream.peek() == '%')
@@ -88,7 +119,7 @@ class GraphFileReader
 			//A priori le fichier n'est pas trié, il n'y a donc aucune garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
 			m_stream.getline(line,127);
-			extractUInt(line,n1,n2);
+			extractEdge(line,n1,n2);
 			
 			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
 			const Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
@@ -101,27 +132,33 @@ class GraphFileReader
 		}
 
 	private:
-		static void extractUInt(const char* str, unsigned int& n1, unsigned int& n2)
+		static unsigned int extractUInt (const char* str)
 		{
-			//exctraction du premier nombre
+			unsigned int ret = 0;
+
 			while (std::isdigit(*str))
 			{
-				n1 *= 10;
-				n1 += *str - '0';
+				ret *= 10;
+				ret += *str - '0';
 				++str;
 			}
+
+			return ret;
+		}
+		static void extractEdge(const char* str, unsigned int& n1, unsigned int& n2)
+		{
+			while (!std::isdigit(*str))
+				str++;
+
+			//exctraction du premier nombre
+			n1 = extractUInt(str);
 
 			//On va jusqu'au deuxième
 			while (!std::isdigit(*str))
 				++str;
 			
 			//Extraction du deuxième nombre
-			while (std::isdigit(*str))
-			{
-				n2 *= 10;
-				n2 += *str - '0';
-				++str;
-			}
+			n2 = extractUInt(str);
 		}
 
 	private:
