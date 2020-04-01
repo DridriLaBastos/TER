@@ -447,11 +447,11 @@ int main(int argc, const char** argv)
 	std::pair<Vertices, Edges> pair = reader.readFile(container,true);
 #endif
 
-	//Cliques Cmax = WLMC(Graph(pair.first,pair.second));
+	Cliques Cmax = WLMC(Graph(pair.first,pair.second));
 
-	//for (Clique& c: Cmax.set)
-	//	std::sort(c.begin(),c.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
-	//std::cout << Cmax << std::endl;
+	for (Clique& c: Cmax.set)
+		std::sort(c.begin(),c.end(),[](const Vertex& a, const Vertex& b) { return a->n < b->n; });
+	std::cout << Cmax << std::endl;
 	//std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
 
 	//getBranches(Graph(pair.first, pair.second), { 5,4 }, { v1.get() ,v2.get(),v3.get(),v4.get(),v5.get(),v6.get() });
