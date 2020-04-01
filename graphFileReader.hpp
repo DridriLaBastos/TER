@@ -119,6 +119,8 @@ class GraphFileReader
 			//A priori le fichier n'est pas trié, il n'y a donc aucune garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
 			m_stream.getline(line,127);
+			if (line[0] == '\0')
+				return;
 			extractEdge(line,n1,n2);
 			
 			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
@@ -151,14 +153,14 @@ class GraphFileReader
 				str++;
 
 			//exctraction du premier nombre
-			n1 = extractUInt(str);
+			n1 = extractUInt(str++);
 
 			//On va jusqu'au deuxième
 			while (!std::isdigit(*str))
-				++str;
+				str++;
 			
 			//Extraction du deuxième nombre
-			n2 = extractUInt(str);
+			n2 = extractUInt(str++);
 		}
 
 	private:
