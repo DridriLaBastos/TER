@@ -34,17 +34,20 @@ class GraphFileReader
 
 			if (evryFormated)
 			{
+				//TODO: c'est bizarre de devoir ce truc avec getline
 				char line[127];
+				const char* ptr = line;
 				m_stream.getline(line,127);
-				const size_t vertexSize = extractUInt(line);
+				const size_t vertexSize = extractUInt(&ptr);
 				ret.first.reserve(vertexSize);   ret.second.reserve(vertexSize);
-				container.resize(vertexSize);
+				container.resize(vertexSize + 1);
 
 				for (size_t i = 0; i < vertexSize; ++i)
 				{
 					const unsigned int vertexNumber = i + 1;
 					m_stream.getline(line,127);
-					const unsigned int weight = extractUInt(line);
+					ptr = line;
+					const unsigned int weight = extractUInt(&ptr);
 
 					if (vertexNumber >= container.size())
 						container.resize(container.size() + 100000);
@@ -55,7 +58,6 @@ class GraphFileReader
 						ret.first.emplace_back(container[vertexNumber].get());
 					}
 				}
-				
 			}
 
 			do
@@ -115,13 +117,14 @@ class GraphFileReader
 			unsigned int n1 = 0;
 			unsigned int n2 = 0;
 			char line [127];
+			const char* ptr = line;
 
 			//A priori le fichier n'est pas trié, il n'y a donc aucune garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
 			m_stream.getline(line,127);
 			if (line[0] == '\0')
 				return;
-			extractEdge(line,n1,n2);
+			extractEdge(&ptr,n1,n2);
 			
 			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
 			const Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
@@ -134,33 +137,33 @@ class GraphFileReader
 		}
 
 	private:
-		static unsigned int extractUInt (const char* str)
+		static unsigned int extractUInt (const char** str)
 		{
 			unsigned int ret = 0;
 
-			while (std::isdigit(*str))
+			while (std::isdigit(**str))
 			{
 				ret *= 10;
-				ret += *str - '0';
-				++str;
+				ret += (**str) - '0';
+				++(*str);
 			}
 
 			return ret;
 		}
-		static void extractEdge(const char* str, unsigned int& n1, unsigned int& n2)
+		static void extractEdge(const char** str, unsigned int& n1, unsigned int& n2)
 		{
-			while (!std::isdigit(*str))
-				str++;
+			while (!std::isdigit(**str))
+				++(*str);
 
-			//exctraction du premier nombre
-			n1 = extractUInt(str++);
+			//Extraction du premier nombre
+			n1 = extractUInt(str);
 
 			//On va jusqu'au deuxième
-			while (!std::isdigit(*str))
-				str++;
+			while (!std::isdigit(**str))
+				++(*str);
 			
 			//Extraction du deuxième nombre
-			n2 = extractUInt(str++);
+			n2 = extractUInt(str);
 		}
 
 	private:
