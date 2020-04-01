@@ -68,7 +68,7 @@ class GraphFileReader
 			return *m_vertexPtrToVertexStruct[vertexNumber];
 		}
 
-		void findEdgeFromVerticesAndEmplaceIfNot(const Vertex& v1, const Vertex&v2, Edges& edges) const
+		void findEdgeFromVerticesAndEmplaceIfNot(Vertex& v1, Vertex&v2, Edges& edges) const
 		{
 			//Si une arête existe entre ces sommets, alors chacun des sommets à l'autre dans ses voisins. Pour vérifier
 			//si une arrête existe ou pas, il suffit donc de chercher un des sommets dans la liste des voisins de l'autre.
@@ -94,8 +94,8 @@ class GraphFileReader
 			m_stream.getline(line,127);
 			extractUInt(line,n1,n2);
 			
-			const Vertex& v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
-			const Vertex& v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
+			Vertex& v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
+			Vertex& v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
 
 			//Une fois que l'on a trouvé les vertex correspondant aux valeurs que l'on a lu du fichier,
 			//il faut vérifier que l'arrête qu'ils forment n'existe pas déjà car rien ne garantit

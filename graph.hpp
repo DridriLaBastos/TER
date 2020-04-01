@@ -47,7 +47,7 @@ using VertexVector = std::vector<Vertex>;
 using Edge = std::pair<VertexStructPtr, VertexStructPtr>;
 using Edges = std::vector<Edge>;
 
-static void connect(Vertex a, Vertex b)
+static void connect(Vertex& a, Vertex& b)
 {
 	auto found = std::find(a.neighbors.begin(), a.neighbors.end(), b.vertex);
 
@@ -59,7 +59,7 @@ static void connect(Vertex a, Vertex b)
 	}
 }
 
-static Edge makeEdge(const Vertex& a, const Vertex& b)
+static Edge makeEdge(Vertex& a, Vertex& b)
 {
 	connect(a, b);
 	return std::make_pair(a.vertex, b.vertex);
@@ -211,35 +211,41 @@ private:
 using VerticesVector = std::vector<Vertices>;
 using Clique = Vertices;
 using Cliques = std::vector<Clique>;
-#ifdef END
 class Graph
 {
 public:
 	Graph(const Vertices& vertices = {}, const Edges& edges = {}) : m_vertices(vertices), m_edges(edges) {}
 
 public:
-	Graph operator[](const VertexSet& V) const
+	Graph operator[](const Vertices& V) const
 	{
 		Graph ret;
-		ret.m_vertices = V.getVertices();
-		Edges E;
+		ret.m_vertices = V;
 
 		for(const Edge& e: m_edges)
 		{
 			bool findFirst = false;
 			bool findSecond = false;
 
-			for (size_t i = 0; i < V.size(); ++i)
+			for (size_t i = 0; i < ret.m_vertices.size(); ++i)
 			{
-				if (V[i] == e.first)
+				size_t posFirst = 0;
+				size_t posSecond = 0;
+
+				if (ret.m_vertices[i] == e.first)
+				{
 					findFirst = true;
-			
-				if (V[i] == e.second)
+					posFirst = i;
+				}
+				else if (ret.m_vertices[i] == e.second)
+				{
+					posSecond = i;
 					findSecond = true;
+				}
 			
 				if (findFirst && findSecond)
 				{
-					ret.m_edges.emplace_back(e);
+					ret.m_edges.emplace_back(makeEdge(ret.m_vertices[posFirst],ret.m_vertices[posSecond]));
 					break;
 				}
 			}
@@ -248,6 +254,7 @@ public:
 		return ret;
 	}
 
+#ifdef END
 	VertexSet getNeighborsOf(const Vertex& vi) const
 	{
 		VertexSet neighbors;
@@ -384,11 +391,12 @@ private:
 		return degreeOfV;
 	}
 
+#endif
 private:
 	Edges		m_edges;//Les arrêtes
 	Vertices	m_vertices;//Les sommets
 };
-#endif
+
 std::ostream& operator<< (std::ostream& stream, const Vertex& v)
 {
 	stream << "(" << v.num() << ", " << v.weight() << ")";
