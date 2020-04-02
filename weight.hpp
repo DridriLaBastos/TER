@@ -3,10 +3,11 @@
 
 #include <array>
 #include <vector>
+#include <iostream>
 
 constexpr size_t WEIGHTS_SIZE = 3;
 
-//TODO: peut �tre passer �a en std::vector ?
+//TODO: peut être passer ça en std::vector ?
 using Weight = std::array<int, WEIGHTS_SIZE>;
 using Weights = std::vector<Weight>;
 

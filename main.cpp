@@ -275,10 +275,11 @@ Cliques WLMC(const Graph& G)
 				{
 					for (size_t i = 0; i < Cmax.set.size(); ++i)
 					{
-						if (cliqueToImprove.weight() > Cmax.set[i].weight())
+						if (Cmax.set[i].weight() <= cliqueToImprove.weight())
 						{
 							std::swap(Cmax.set[i],Cmax.set.back());
 							Cmax.set.pop_back();
+							--i;
 						}
 					}
 
@@ -454,6 +455,7 @@ int main(int argc, const char** argv)
 	std::cout << Cmax << std::endl;
 	std::cout << "found: " << Cmax.set.size() << " cliques" << std::endl;
 	//std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
+
 
 	//getBranches(Graph(pair.first, pair.second), { 5,4 }, { v1.get() ,v2.get(),v3.get(),v4.get(),v5.get(),v6.get() });
 
