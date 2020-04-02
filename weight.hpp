@@ -6,7 +6,7 @@
 
 constexpr size_t WEIGHTS_SIZE = 3;
 
-//TODO: peut être passer ça en std::vector ?
+//TODO: peut ï¿½tre passer ï¿½a en std::vector ?
 using Weight = std::array<int, WEIGHTS_SIZE>;
 using Weights = std::vector<Weight>;
 
@@ -57,10 +57,10 @@ std::ostream& operator<< (std::ostream& stream, const Weight& w)
 {
 	stream << "{" << w[0];
 
-	for (size_t i = 1; i < WEIGHTS_SIZE; ++i)
-		stream << " " << w[i];
+	for (size_t i = 1; i < WEIGHTS_SIZE - 1; ++i)
+		stream << ", " << w[i];
 
-	stream << "}";
+	stream << ", " << w[WEIGHTS_SIZE - 1] << "}";
 	return stream;
 }
 
