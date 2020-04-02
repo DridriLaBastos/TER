@@ -54,6 +54,9 @@ class GraphFileReader
 			do
 			{
 				readLine();
+				if (*m_lineBufferPtr == '\0')
+					break;
+
 				if (!isCommentLine())
 					parseEdge(ret,container);
 				
@@ -69,10 +72,21 @@ class GraphFileReader
 		}
 	
 	private:
-		void passWhites(void)
+		bool isVertexInfoLine(void) const { return *m_lineBuffer == 'i'; }
+		//Certains fichier utilise un 'n' pour enregistrer un sommet. Pour l'instant on ne lit pas les sommets de cette façon, mais directement depuis les arrêtes
+		bool isCommentLine(void) const { return (*m_lineBuffer == '%') || (*m_lineBuffer == 'c') || (*m_lineBuffer == 'n'); }
+
+		//retourne true si elle la fin du buffer n'a pas été rencontré
+		bool passWhites(void)
 		{
 			while (!std::isdigit(*m_lineBufferPtr))
+			{
+				if ((*m_lineBufferPtr == '\0') || (m_lineBufferPtr - m_lineBuffer) > LINE_BUFFER_SIZE)
+					return false;
 				++m_lineBufferPtr;
+			}
+
+			return true;
 		}
 
 		void readLine(void)
@@ -112,23 +126,14 @@ class GraphFileReader
 		{
 			weightCount = 1;
 
-			while (!std::isdigit(*m_lineBufferPtr))
-				++m_lineBufferPtr;
-			
+			passWhites();
 			vertexCount = extractUInt();
 
-			//TODO: tester la dernière condition
-			while (!std::isdigit(*m_lineBufferPtr))
-			{
-				if ((*m_lineBuffer == '\n') || (m_lineBufferPtr - m_lineBuffer) > LINE_BUFFER_SIZE)
-					return;
-				++m_lineBufferPtr;
-			}
-			
-			weightCount = extractUInt();
+			if (passWhites())
+				weightCount = extractUInt();
 		}
 
-		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container, const Weight w = Weight())
+		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container, const Weight w = { 1 })
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())
@@ -163,17 +168,10 @@ class GraphFileReader
 			//A priori le fichier n'est pas trié, il n'y a donc aucune garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
 
-			if (*m_lineBufferPtr == 'e')
-			{
-				while (!std::isdigit(*m_lineBufferPtr))
-					++m_lineBufferPtr;
-			}
-
+			passWhites();
 			const unsigned int n1 = extractUInt();
 
-			while (!std::isdigit(*m_lineBufferPtr))
-				++m_lineBufferPtr;
-			
+			passWhites();
 			const unsigned int n2 = extractUInt();
 			
 			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
@@ -186,8 +184,6 @@ class GraphFileReader
 			findEdgeFromVerticesAndEmplaceIfNot(v1,v2,pair.second);
 		}
 
-		bool isVertexInfoLine (void) const { return *m_lineBuffer == 'i'; }
-		bool isCommentLine(void) const { return (*m_lineBuffer=='%') || (*m_lineBuffer=='c') || (*m_lineBuffer=='n'); }
 		unsigned int extractUInt (void)
 		{
 			unsigned int ret = 0;
@@ -199,21 +195,7 @@ class GraphFileReader
 				++m_lineBufferPtr;
 			}
 
-			passWhites();
-
 			return ret;
-		}
-
-		void extractEdge(unsigned int& n1, unsigned int& n2)
-		{
-			passWhites();
-			//Extraction du premier nombre
-			n1 = extractUInt();
-
-			passWhites();
-			
-			//Extraction du deuxième nombre
-			n2 = extractUInt();
 		}
 
 	private:
