@@ -101,7 +101,7 @@ class GraphFileReader
 				m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
 		};
 
-		void parseVertexWeight(Vertices& vertices, VertexContainer& container, const unsigned int vertexNumber, const unsigned int weightCount)
+		void parseVertexWeights(Vertices& vertices, VertexContainer& container, const unsigned int vertexNumber, const unsigned int weightCount)
 		{
 			Weight w;
 
@@ -109,8 +109,9 @@ class GraphFileReader
 			{
 				w[i] = extractUInt();
 				passWhites();
-				findVertexAndEmplaceIfNot(vertexNumber,vertices,container,w);
 			}
+
+			findVertexAndEmplaceIfNot(vertexNumber,vertices,container,w);
 		}
 
 		void parseVertices (Vertices& vertices, VertexContainer& container, const unsigned int vertexCount, const unsigned int weightCount)
@@ -118,7 +119,7 @@ class GraphFileReader
 			for (size_t i = 0; i < vertexCount; ++i)
 			{
 				readLine();
-				parseVertexWeight(vertices,container,i+1,weightCount);
+				parseVertexWeights(vertices,container,i+1,weightCount);
 			}
 		}
 
