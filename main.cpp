@@ -444,7 +444,7 @@ int main(int argc, const char** argv)
 #else
 	VertexContainer container;
 	GraphFileReader reader (argv[1]);
-	std::pair<Vertices, Edges> pair = reader.readFile(container,true);
+	std::pair<Vertices, Edges> pair = reader.readFile(container);
 #endif
 
 	Cliques Cmax = WLMC(Graph(pair.first,pair.second));

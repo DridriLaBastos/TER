@@ -9,6 +9,8 @@
 
 #include "graph.hpp"
 
+constexpr unsigned int LINE_BUFFER_SIZE = 127;
+
 class GraphFileReader
 {
 	public:
@@ -16,56 +18,44 @@ class GraphFileReader
 		{
 			if (!m_stream.is_open())
 				throw std::logic_error("ERROR: cannot open '" + path + "'");
+			
+			std::memset((void*)m_lineBuffer,'\0',LINE_BUFFER_SIZE);
 		}
 
-		std::pair<Vertices,Edges> readFile (VertexContainer& container, const bool evryFormated = false)
+		//TODO: faire une petite gestion des erreurs dans le parser
+		std::pair<Vertices,Edges> readFile (VertexContainer& container)
 		{
 			std::pair<Vertices,Edges> ret;
 			container.clear();
-
-			if (!evryFormated)
-			{
-				ret.first.reserve(1000000);   ret.second.reserve(1000000);
-				container.resize(1000000);
-			}
+			ret.first.reserve(1000000);   ret.second.reserve(1000000);
+			container.resize(1000000);
 
 			std::cout << "Begin reading... ";
 			auto begin = std::chrono::system_clock::now();
 
-			if (evryFormated)
+			passComment();
+			readLine();
+
+			if (isVertexInfoLine())
 			{
-				//TODO: c'est bizarre de devoir ce truc avec getline
-				char line[127];
-				const char* ptr = line;
-				m_stream.getline(line,127);
-				const size_t vertexSize = extractUInt(&ptr);
-				ret.first.reserve(vertexSize);   ret.second.reserve(vertexSize);
-				container.resize(vertexSize + 1);
+				unsigned int vertexCount = 0;
+				unsigned int weightCount = 1;
+				extractVertexCountAndWeightCount(vertexCount,weightCount);
 
-				for (size_t i = 0; i < vertexSize; ++i)
-				{
-					const unsigned int vertexNumber = i + 1;
-					m_stream.getline(line,127);
-					ptr = line;
-					const unsigned int weight = extractUInt(&ptr);
+				if (weightCount != WEIGHTS_SIZE)
+					throw std::logic_error("WLMC is compiled for vertex with " + std::to_string(WEIGHTS_SIZE) + 
+						" weight, but '" + m_path + "' contains vertecis with " + std::to_string(vertexCount) + " weights");
 
-					if (vertexNumber >= container.size())
-						container.resize(container.size() + 100000);
-			
-					if (container[vertexNumber].get() == nullptr)
-					{
-						container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber,{(int)weight}));
-						ret.first.emplace_back(container[vertexNumber].get());
-					}
-				}
+				parseVertices(ret.first,container,vertexCount,weightCount);
 			}
+			else
+				parseEdge(ret,container);
 
 			do
 			{
-				if ((char)m_stream.peek() == '%')
-					passComment();
-				else
-					parseLine(ret,container);
+				readLine();
+				if (!isCommentLine())
+					parseEdge(ret,container);
 				
 			} while (!m_stream.eof());
 			auto end = std::chrono::system_clock::now();
@@ -79,10 +69,66 @@ class GraphFileReader
 		}
 	
 	private:
-		void passComment(void)
-		{ m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n'); };
+		void passWhites(void)
+		{
+			while (!std::isdigit(*m_lineBufferPtr))
+				++m_lineBufferPtr;
+		}
 
-		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container) const
+		void readLine(void)
+		{
+			m_stream.getline(m_lineBuffer,LINE_BUFFER_SIZE);
+			m_lineBufferPtr = m_lineBuffer;
+		}
+
+		void passComment(void)
+		{
+			while (m_stream.peek() == '%')
+				m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+		};
+
+		void parseVertexWeight(Vertices& vertices, VertexContainer& container, const unsigned int vertexNumber, const unsigned int weightCount)
+		{
+			Weight w;
+
+			for (size_t i = 0; i < weightCount; ++i)
+			{
+				w[i] = extractUInt();
+				passWhites();
+				findVertexAndEmplaceIfNot(vertexNumber,vertices,container,w);
+			}
+		}
+
+		void parseVertices (Vertices& vertices, VertexContainer& container, const unsigned int vertexCount, const unsigned int weightCount)
+		{
+			for (size_t i = 0; i < vertexCount; ++i)
+			{
+				readLine();
+				parseVertexWeight(vertices,container,i+1,weightCount);
+			}
+		}
+
+		void extractVertexCountAndWeightCount(unsigned int& vertexCount, unsigned int& weightCount)
+		{
+			weightCount = 1;
+
+			while (!std::isdigit(*m_lineBufferPtr))
+				++m_lineBufferPtr;
+			
+			vertexCount = extractUInt();
+
+			//TODO: tester la dernière condition
+			while (!std::isdigit(*m_lineBufferPtr))
+			{
+				if ((*m_lineBuffer == '\n') || (m_lineBufferPtr - m_lineBuffer) > LINE_BUFFER_SIZE)
+					return;
+				++m_lineBufferPtr;
+			}
+			
+			weightCount = extractUInt();
+		}
+
+		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container, const Weight w = Weight())
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())
@@ -90,7 +136,7 @@ class GraphFileReader
 			
 			if (container[vertexNumber].get() == nullptr)
 			{
-				container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber,{1}));
+				container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber,w));
 				vertices.emplace_back(container[vertexNumber].get());
 			}
 
@@ -112,19 +158,23 @@ class GraphFileReader
 				edges.emplace_back(makeEdge(v1,v2));
 		}
 
-		void parseLine(std::pair<Vertices,Edges>& pair, VertexContainer& container)
+		void parseEdge(std::pair<Vertices,Edges>& pair, VertexContainer& container)
 		{
-			unsigned int n1 = 0;
-			unsigned int n2 = 0;
-			char line [127];
-			const char* ptr = line;
-
 			//A priori le fichier n'est pas trié, il n'y a donc aucune garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
-			m_stream.getline(line,127);
-			if (line[0] == '\0')
-				return;
-			extractEdge(&ptr,n1,n2);
+
+			if (*m_lineBufferPtr == 'e')
+			{
+				while (!std::isdigit(*m_lineBufferPtr))
+					++m_lineBufferPtr;
+			}
+
+			const unsigned int n1 = extractUInt();
+
+			while (!std::isdigit(*m_lineBufferPtr))
+				++m_lineBufferPtr;
+			
+			const unsigned int n2 = extractUInt();
 			
 			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
 			const Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
@@ -136,38 +186,41 @@ class GraphFileReader
 			findEdgeFromVerticesAndEmplaceIfNot(v1,v2,pair.second);
 		}
 
-	private:
-		static unsigned int extractUInt (const char** str)
+		bool isVertexInfoLine (void) const { return *m_lineBuffer == 'i'; }
+		bool isCommentLine(void) const { return (*m_lineBuffer=='%') || (*m_lineBuffer=='c') || (*m_lineBuffer=='n'); }
+		unsigned int extractUInt (void)
 		{
 			unsigned int ret = 0;
 
-			while (std::isdigit(**str))
+			while (std::isdigit(*m_lineBufferPtr))
 			{
 				ret *= 10;
-				ret += (**str) - '0';
-				++(*str);
+				ret += *m_lineBufferPtr - '0';
+				++m_lineBufferPtr;
 			}
+
+			passWhites();
 
 			return ret;
 		}
-		static void extractEdge(const char** str, unsigned int& n1, unsigned int& n2)
+
+		void extractEdge(unsigned int& n1, unsigned int& n2)
 		{
-			while (!std::isdigit(**str))
-				++(*str);
-
+			passWhites();
 			//Extraction du premier nombre
-			n1 = extractUInt(str);
+			n1 = extractUInt();
 
-			//On va jusqu'au deuxième
-			while (!std::isdigit(**str))
-				++(*str);
+			passWhites();
 			
 			//Extraction du deuxième nombre
-			n2 = extractUInt(str);
+			n2 = extractUInt();
 		}
 
 	private:
 		std::ifstream m_stream;
+		std::string m_path;
+		char m_lineBuffer [LINE_BUFFER_SIZE];
+		const char* m_lineBufferPtr;
 };
 
 #endif
