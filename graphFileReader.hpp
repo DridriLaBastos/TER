@@ -9,6 +9,8 @@
 
 #include "graph.hpp"
 
+constexpr unsigned int LINE_BUFFER_SIZE = 127;
+
 class GraphFileReader
 {
 	public:
@@ -16,23 +18,42 @@ class GraphFileReader
 		{
 			if (!m_stream.is_open())
 				throw std::logic_error("ERROR: cannot open '" + path + "'");
+			
+			std::memset((void*)m_lineBuffer,'\0',LINE_BUFFER_SIZE);
 		}
 
+		//TODO: faire une petite gestion des erreurs dans le parser
 		std::pair<Vertices,Edges> readFile (VertexStructContainer& container)
 		{
 			std::pair<Vertices,Edges> ret;
-			m_vertexPtrToVertexStruct.clear();   container.clear();
+			container.clear();
 			ret.first.reserve(1000000);   ret.second.reserve(1000000);
-			container.resize(1000000);   m_vertexPtrToVertexStruct.resize(1000000);
+			container.resize(1000000);
 
 			std::cout << "Begin reading... ";
 			auto begin = std::chrono::system_clock::now();
+
+			passComment();
+			readLine();
+
+			if (isVertexInfoLine())
+			{
+				unsigned int vertexCount = 0;
+				unsigned int weightCount = 1;
+				extractVertexCountAndWeightCount(vertexCount,weightCount);
+				parseVertices(ret.first,container,vertexCount);
+			}
+			else
+				parseEdge(ret,container);
+
 			do
 			{
-				if ((char)m_stream.peek() == '%')
-					passComment();
-				else
-					parseLine(ret,container);
+				readLine();
+				if (*m_lineBufferPtr == '\0')
+					break;
+
+				if (!isCommentLine())
+					parseEdge(ret,container);
 				
 			} while (!m_stream.eof());
 			auto end = std::chrono::system_clock::now();
@@ -46,29 +67,69 @@ class GraphFileReader
 		}
 	
 	private:
-		void passComment(void)
-		{ m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n'); };
+		bool isVertexInfoLine(void) const { return *m_lineBuffer == 'i'; }
+		//Certains fichier utilise un 'n' pour enregistrer un sommet. Pour l'instant on ne lit pas les sommets de cette façon, mais directement depuis les arrêtes
+		bool isCommentLine(void) const { return (*m_lineBuffer == '%') || (*m_lineBuffer == 'c') || (*m_lineBuffer == 'n'); }
 
-		Vertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexStructContainer& container)
+		//retourne true si elle la fin du buffer n'a pas été rencontré
+		bool passWhites(void)
+		{
+			while (!std::isdigit(*m_lineBufferPtr))
+			{
+				if ((*m_lineBufferPtr == '\0') || (m_lineBufferPtr - m_lineBuffer) > LINE_BUFFER_SIZE)
+					return false;
+				++m_lineBufferPtr;
+			}
+
+			return true;
+		}
+
+		void readLine(void)
+		{
+			m_stream.getline(m_lineBuffer,LINE_BUFFER_SIZE);
+			m_lineBufferPtr = m_lineBuffer;
+		}
+
+		void passComment(void)
+		{
+			while (m_stream.peek() == '%')
+				m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+		};
+
+		void parseVertices (Vertices& vertices, VertexStructContainer& container, const unsigned int vertexCount)
+		{
+			for (size_t i = 0; i < vertexCount; ++i)
+				findVertexAndEmplaceIfNot(i+1,vertices,container,extractUInt());
+		}
+
+		void extractVertexCountAndWeightCount(unsigned int& vertexCount, unsigned int& weightCount)
+		{
+			weightCount = 1;
+
+			passWhites();
+			vertexCount = extractUInt();
+			return;
+
+			if (passWhites())
+				weightCount = extractUInt();
+		}
+
+		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexStructContainer& container, const Weight w = 1)
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())
-			{
-				container.resize(container.size() + 100000);
-				m_vertexPtrToVertexStruct.resize(container.size());
-			}
+				container.resize(container.size() * 2);
 			
 			if (container[vertexNumber].get() == nullptr)
 			{
-				container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber));
+				container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber,w));
 				vertices.emplace_back(container[vertexNumber].get());
-				m_vertexPtrToVertexStruct[vertexNumber] = &vertices.back();
 			}
 
-			return *m_vertexPtrToVertexStruct[vertexNumber];
+			return container[vertexNumber].get();
 		}
 
-		void findEdgeFromVerticesAndEmplaceIfNot(Vertex& v1, Vertex&v2, Edges& edges) const
+		void findEdgeFromVerticesAndEmplaceIfNot(Vertex& v1, Vertex&v2, Edges& edges)
 		{
 			//Si une arête existe entre ces sommets, alors chacun des sommets à l'autre dans ses voisins. Pour vérifier
 			//si une arrête existe ou pas, il suffit donc de chercher un des sommets dans la liste des voisins de l'autre.
@@ -76,26 +137,26 @@ class GraphFileReader
 			//les deux sont forcément voisin l'un de l'autre (voir makeEdge)
 			//Wouah *_*
 			auto found = std::find_if(v1.neighbors.begin(), v1.neighbors.end(),
-				[&v2](const Vertex& vs)
+				[&v2](const VertexStructPtr vs)
 				{ return vs == v2; });
 			
 			if (found == v1.neighbors.end())
 				edges.emplace_back(makeEdge(v1,v2));
 		}
 
-		void parseLine(std::pair<Vertices,Edges>& pair, VertexStructContainer& container)
+		void parseEdge(std::pair<Vertices,Edges>& pair, VertexStructContainer& container)
 		{
-			unsigned int n1 = 0;
-			unsigned int n2 = 0;
-			char line [127];
-
 			//A priori le fichier n'est pas trié, il n'y a donc aucune garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
-			m_stream.getline(line,127);
-			extractUInt(line,n1,n2);
+
+			passWhites();
+			const unsigned int n1 = extractUInt();
+
+			passWhites();
+			const unsigned int n2 = extractUInt();
 			
-			Vertex& v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
-			Vertex& v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
+			Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
+			Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
 
 			//Une fois que l'on a trouvé les vertex correspondant aux valeurs que l'on a lu du fichier,
 			//il faut vérifier que l'arrête qu'ils forment n'existe pas déjà car rien ne garantit
@@ -104,44 +165,25 @@ class GraphFileReader
 			findEdgeFromVerticesAndEmplaceIfNot(v1,v2,pair.second);
 		}
 
-	private:
-		static void extractUInt(const char* str, unsigned int& n1, unsigned int& n2)
+		unsigned int extractUInt (void)
 		{
-			if(!std::isdigit(*str))
+			unsigned int ret = 0;
+
+			while (std::isdigit(*m_lineBufferPtr))
 			{
-				if (*str == 'e')
-				{
-					while (!std::isdigit(*str))
-						++str;
-				}
-				else
-					return;
+				ret *= 10;
+				ret += *m_lineBufferPtr - '0';
+				++m_lineBufferPtr;
 			}
 
-			//exctraction du premier nombre
-			while (std::isdigit(*str))
-			{
-				n1 *= 10;
-				n1 += *str - '0';
-				++str;
-			}
-
-			//On va jusqu'au deuxième
-			while (!std::isdigit(*str))
-				++str;
-			
-			//Extraction du deuxième nombre
-			while (std::isdigit(*str))
-			{
-				n2 *= 10;
-				n2 += *str - '0';
-				++str;
-			}
+			return ret;
 		}
 
 	private:
 		std::ifstream m_stream;
-		std::vector<Vertex*> m_vertexPtrToVertexStruct;
+		std::string m_path;
+		char m_lineBuffer [LINE_BUFFER_SIZE];
+		const char* m_lineBufferPtr;
 };
 
 #endif

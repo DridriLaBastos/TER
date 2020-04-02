@@ -67,10 +67,11 @@ static Edge makeEdge(Vertex& a, Vertex& b)
 
 struct VertexDegreePair
 {
-	const Vertex& v;
+	//La référence ne peut pas être constante sinon l'appelle a std::swap ne marche pas dans Initialize
+	const Vertex* v;
 	unsigned int d;
 	//v: Vertex   d: degree
-	VertexDegreePair(const Vertex& ver, const unsigned int d) : v(ver) { this->d = d; }
+	VertexDegreePair(const Vertex& ver, const unsigned int d) : v(&ver) { this->d = d; }
 };
 
 using VertexDegreePairs = std::vector<VertexDegreePair>;
@@ -79,6 +80,12 @@ class Vertices
 {
 public:
 	Vertices(const VertexVector& vertices = {}) : m_vertices(vertices) {}
+	Vertices(const VerticesStruct& vertices)
+	{
+		m_vertices.reserve(vertices.size());
+		for (const VertexStruct* v: vertices)
+			m_vertices.emplace_back(v);
+	}
 
 public:
 	VertexVector::iterator begin(void) { return m_vertices.begin(); }
@@ -254,28 +261,27 @@ public:
 		return ret;
 	}
 
-#ifdef END
-	VertexSet getNeighborsOf(const Vertex& vi) const
-	{
-		VertexSet neighbors;
-
-		for (const Edge& e : m_edges)
-		{
-			if (e.first == vi)
-				neighbors.emplace_back(e.second);
-			else if (e.second == vi)
-				neighbors.emplace_back(e.first);
-		}
-
-		return neighbors;
-	}
+	//VertexSet getNeighborsOf(const Vertex& vi) const
+	//{
+	//	VertexSet neighbors;
+	//
+	//	for (const Edge& e : m_edges)
+	//	{
+	//		if (e.first == vi)
+	//			neighbors.emplace_back(e.second);
+	//		else if (e.second == vi)
+	//			neighbors.emplace_back(e.first);
+	//	}
+	//
+	//	return neighbors;
+	//}
 
 	VertexDegreePairs computeDegrees(void) const
 	{
 		VertexDegreePairs ret;	ret.reserve(m_vertices.size());
 
-		for (const Vertex v : m_vertices)
-			ret.emplace_back(v, computeDegreeForVertex(v));
+		for (const Vertex& v : m_vertices)
+			ret.emplace_back(v, v.neighbors.size());
 
 		return ret;
 	}
@@ -329,9 +335,9 @@ public:
 	bool empty(void) const { return m_vertices.empty(); }
 
 	const Vertices& getVertices(void) const { return m_vertices; }
-	const VertexSet getVertexSet(void) const { return m_vertices; }
 	const Edges& getEdges(void) const { return m_edges; }
 
+#ifdef END
 private:
 	void rebuildVerticesSet(void)
 	{
