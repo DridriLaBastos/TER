@@ -339,6 +339,8 @@ static void setup (void)
 	signal(SIGKILL, signalHandler);
 	signal(SIGQUIT, signalHandler);
 	signal(SIGINT, signalHandler);
+	signal(SIGTERM, signalHandler);
+	signal(SIGSTOP, signalHandler);
 #endif
 }
 
