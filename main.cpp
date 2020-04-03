@@ -256,7 +256,7 @@ int main(int argc, const char** argv)
 	setup();
 	VertexStructContainer container;
 
-	GraphFileReader reader (argv[0]);
+	GraphFileReader reader (argv[1]);
 	std::pair<Vertices, Edges> pair = reader.readFile(container);
 
 	Clique Cmax = WLMC(Graph(pair.first,pair.second));
