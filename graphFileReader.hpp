@@ -14,7 +14,7 @@ constexpr unsigned int LINE_BUFFER_SIZE = 127;
 class GraphFileReader
 {
 	public:
-		GraphFileReader(const std::string& path): m_stream(path)
+		GraphFileReader(const std::string& path): m_stream(path), m_path(path)
 		{
 			if (!m_stream.is_open())
 				throw std::logic_error("ERROR: cannot open '" + path + "'");
@@ -44,7 +44,7 @@ class GraphFileReader
 
 				if (weightCount != WEIGHTS_SIZE)
 					throw std::logic_error("WLMC is compiled for vertex with " + std::to_string(WEIGHTS_SIZE) + 
-						" weight, but '" + m_path + "' contains vertecis with " + std::to_string(vertexCount) + " weights");
+						" weights, but '" + m_path + "' contains vertices with " + std::to_string(vertexCount) + " weights");
 
 				parseVertices(ret.first,container,vertexCount,weightCount);
 			}

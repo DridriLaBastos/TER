@@ -184,15 +184,25 @@ public:
 	//TODO: améliorer le O(n^2)
 	void orderWith(const VertexOrdering& O)
 	{
-		unsigned int vPos = 0;
+		unsigned int OPos = 0;
+		unsigned int VPos = 0;
 
-		for (size_t i = 0; (i < O.size()) && (vPos < m_vertices.size()); ++i)
+		while (VPos < m_vertices.size() && OPos < O.size())
 		{
-			for (size_t j = vPos; j < m_vertices.size(); ++j)
+			bool found = false;
+
+			for (size_t j = VPos; j < m_vertices.size(); ++j)
 			{
-				if (m_vertices[j] == O[i])
-					std::swap(m_vertices[vPos++], m_vertices[j]);
+				if (m_vertices[j] == O[OPos])
+				{
+					std::swap(m_vertices[VPos++], m_vertices[j]);
+					++OPos;
+					found = true;
+				}
 			}
+
+			//Si le sommet que l'on veut trier n'est pas présent dans le graphe, on passe au sommet suivant à trier
+			if (!found) ++OPos;
 		}
 	}
 

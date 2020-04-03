@@ -58,10 +58,10 @@ std::ostream& operator<< (std::ostream& stream, const Weight& w)
 {
 	stream << "{" << w[0];
 
-	for (size_t i = 1; i < WEIGHTS_SIZE - 1; ++i)
+	for (size_t i = 1; i < WEIGHTS_SIZE; ++i)
 		stream << ", " << w[i];
-
-	stream << ", " << w[WEIGHTS_SIZE - 1] << "}";
+	
+	stream << "}";
 	return stream;
 }
 
