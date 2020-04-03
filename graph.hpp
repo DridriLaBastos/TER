@@ -286,8 +286,9 @@ public:
 		return ret;
 	}
 
-	void removeVertex(const Vertex v)
+	void removeVertex(const Vertex& v)
 	{
+		//D'abord on cherche le sommet dans le graphe
 		size_t vPosInVertices = 0;
 
 		for (size_t i = 0; i < m_vertices.size(); ++i)
@@ -301,22 +302,41 @@ public:
 
 		if (vPosInVertices < m_vertices.size())
 		{
+			Vertex& vertexToRemove = m_vertices[vPosInVertices];
 			Vertex saveOfLastVertex = m_vertices.back();
 
+			//Puis on le supprime de tous ses voisins
+			for (const VertexStructPtr& n: vertexToRemove.neighbors)
+			{
+				//On recherche le voisin dans l'ensemble des sommets
+				//TODO: voir si cette version à besoin d'^etre optimisé
+				for (Vertex& v: m_vertices)
+				{
+					bool removeHappened = false;
+					if (v == n)
+					{
+						for (size_t i = 0; i < v.neighbors.size(); ++i)
+						{
+							if (v.neighbors[i] == vertexToRemove)
+							{
+								std::swap(v.neighbors[i],v.neighbors.back());
+								v.neighbors.pop_back();
+								removeHappened = true;
+								break;
+							}
+						}
+					}
+					if (removeHappened)
+						break;
+				}
+			}
+
+			//Enfin on le supprime du graphe
 			std::swap(m_vertices[vPosInVertices], m_vertices.back());
 			m_vertices.pop_back();
 
-			//On présèrve l'ordre des vertex
-			//TODO: est-ce vraiment nécessaire ? Le profiler windows n'affichait même pas l'utilisation de orderWith
-			//comme importante pour le CPU ?
-			//for (size_t i = vPosInVertices; i < m_vertices.size() - 2; ++i)
-			//{ m_vertices[i] = m_vertices[i+1]; }
-			//
-			//if (!m_vertices.empty())
-			//	m_vertices[m_vertices.size() - 1] = saveOfLastVertex;
-
-			size_t graphSize = m_edges.size();
-			for (size_t i = 0; i < graphSize; ++i)
+			//Puis on supprime du graphe les arr^etes qui avaient ce sommet
+			for (size_t i = 0; i < m_edges.size(); ++i)
 			{
 				Edge& currentEdge = m_edges[i];
 
@@ -324,7 +344,6 @@ public:
 				{
 					std::swap(m_edges[i], m_edges.back());
 					m_edges.pop_back();
-					--graphSize;
 					--i;
 				}
 			}

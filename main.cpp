@@ -65,7 +65,7 @@ InitReturnType initialize(const Graph& G, Weight lb)
 			}
 		}
 
-		//O0 est l'ensemble des sommets dans l'ordre avec lequel ils sont trouv�s par cette fonction
+		//O0 est l'ensemble des sommets dans l'ordre avec lequel ils sont trouvés par cette fonction
 		O0.emplace_back(vi.v->vertex);
 		//U <- U\{vi} Cette ligne arrive à la fin car on a besoin de vi avant
 		degrees.pop_back();
@@ -247,16 +247,16 @@ static void setup (void)
 
 int main(int argc, const char** argv)
 {
-	if (argc != 2)
+	/*if (argc != 2)
 	{
 		std::cerr << "arguments are <file path>\n";
 		return EXIT_FAILURE;
-	}
+	}*/
 
 	setup();
 	VertexStructContainer container;
 
-	GraphFileReader reader (argv[1]);
+	GraphFileReader reader ("graphs/evry/mono/instances1.txt");
 	std::pair<Vertices, Edges> pair = reader.readFile(container);
 
 	Clique Cmax = WLMC(Graph(pair.first,pair.second));

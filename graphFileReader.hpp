@@ -26,9 +26,11 @@ class GraphFileReader
 		std::pair<Vertices,Edges> readFile (VertexStructContainer& container)
 		{
 			std::pair<Vertices,Edges> ret;
+			std::vector<Vertex*> vertexStructToVertexPtr;
 			container.clear();
 			ret.first.reserve(1000000);   ret.second.reserve(1000000);
 			container.resize(1000000);
+			vertexStructToVertexPtr.resize(container.size());
 
 			std::cout << "Begin reading... ";
 			auto begin = std::chrono::system_clock::now();
@@ -41,10 +43,10 @@ class GraphFileReader
 				unsigned int vertexCount = 0;
 				unsigned int weightCount = 1;
 				extractVertexCountAndWeightCount(vertexCount,weightCount);
-				parseVertices(ret.first,container,vertexCount);
+				parseVertices(ret.first,container,vertexCount,vertexStructToVertexPtr);
 			}
 			else
-				parseEdge(ret,container);
+				parseEdge(ret,container,vertexStructToVertexPtr);
 
 			do
 			{
@@ -53,7 +55,7 @@ class GraphFileReader
 					break;
 
 				if (!isCommentLine())
-					parseEdge(ret,container);
+					parseEdge(ret,container,vertexStructToVertexPtr);
 				
 			} while (!m_stream.eof());
 			auto end = std::chrono::system_clock::now();
@@ -96,10 +98,13 @@ class GraphFileReader
 				m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
 		};
 
-		void parseVertices (Vertices& vertices, VertexStructContainer& container, const unsigned int vertexCount)
+		void parseVertices (Vertices& vertices, VertexStructContainer& container, const unsigned int vertexCount, std::vector<Vertex*>& vertexStructToVertexPtr)
 		{
 			for (size_t i = 0; i < vertexCount; ++i)
-				findVertexAndEmplaceIfNot(i+1,vertices,container,extractUInt());
+			{
+				readLine();
+				findVertexAndEmplaceIfNot(i+1,vertices,container,vertexStructToVertexPtr, extractUInt());
+			}
 		}
 
 		void extractVertexCountAndWeightCount(unsigned int& vertexCount, unsigned int& weightCount)
@@ -114,19 +119,23 @@ class GraphFileReader
 				weightCount = extractUInt();
 		}
 
-		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexStructContainer& container, const Weight w = 1)
+		Vertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexStructContainer& container, std::vector<Vertex*>& vertexStructToVertexPtr, Weight w = 1)
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())
-				container.resize(container.size() * 2);
+			{
+				container.resize(container.size() + 100000);
+				vertexStructToVertexPtr.resize(container.size());
+			}
 			
 			if (container[vertexNumber].get() == nullptr)
 			{
 				container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber,w));
 				vertices.emplace_back(container[vertexNumber].get());
+				vertexStructToVertexPtr[vertexNumber] = &vertices.back();
 			}
 
-			return container[vertexNumber].get();
+			return *vertexStructToVertexPtr[vertexNumber];
 		}
 
 		void findEdgeFromVerticesAndEmplaceIfNot(Vertex& v1, Vertex&v2, Edges& edges)
@@ -144,7 +153,7 @@ class GraphFileReader
 				edges.emplace_back(makeEdge(v1,v2));
 		}
 
-		void parseEdge(std::pair<Vertices,Edges>& pair, VertexStructContainer& container)
+		void parseEdge(std::pair<Vertices,Edges>& pair, VertexStructContainer& container, std::vector<Vertex*>& vertexStructToVertexPtr)
 		{
 			//A priori le fichier n'est pas trié, il n'y a donc aucune garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
@@ -155,8 +164,8 @@ class GraphFileReader
 			passWhites();
 			const unsigned int n2 = extractUInt();
 			
-			Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
-			Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
+			Vertex& v1 = findVertexAndEmplaceIfNot(n1,pair.first,container,vertexStructToVertexPtr);
+			Vertex& v2 = findVertexAndEmplaceIfNot(n2,pair.first,container,vertexStructToVertexPtr);
 
 			//Une fois que l'on a trouvé les vertex correspondant aux valeurs que l'on a lu du fichier,
 			//il faut vérifier que l'arrête qu'ils forment n'existe pas déjà car rien ne garantit
