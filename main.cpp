@@ -247,16 +247,16 @@ static void setup (void)
 
 int main(int argc, const char** argv)
 {
-	/*if (argc != 2)
+	if (argc != 2)
 	{
 		std::cerr << "arguments are <file path>\n";
 		return EXIT_FAILURE;
-	}*/
+	}
 
 	setup();
 	VertexStructContainer container;
 
-	GraphFileReader reader ("graphs/evry/mono/instances1.txt");
+	GraphFileReader reader (argv[0]);
 	std::pair<Vertices, Edges> pair = reader.readFile(container);
 
 	Clique Cmax = WLMC(Graph(pair.first,pair.second));
