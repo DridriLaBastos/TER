@@ -65,4 +65,53 @@ std::ostream& operator<< (std::ostream& stream, const Weight& w)
 	return stream;
 }
 
+Weight& operator+= (Weight& w1, const Weight& w2)
+{
+	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
+		w1[i] += w2[i];
+	
+	return w1;
+}
+
+Weight operator+ (const Weight& w1, const Weight& w2)
+{
+	Weight w (w1);
+	w += w2;
+	return w;
+}
+
+Weight& operator-= (Weight& w1, const Weight& w2)
+{
+	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
+		w1[i] -= w2[i];
+	
+	return w1;
+}
+
+Weight operator- (const Weight& w1, const Weight& w2)
+{
+	Weight w (w1);
+	w -= w2;
+	return w;
+}
+
+Weights& operator+= (Weights& weights, const Weights& toAdd)
+{
+	if (weights.empty())
+		weights = toAdd;
+	else
+	{
+		Weights newWeights;
+		newWeights.reserve(weights.size() * toAdd.size());
+		std::swap(weights,newWeights);
+
+		for (const Weight& w1: toAdd)
+		{
+			for (const Weight& w2: newWeights)
+				weights.emplace_back(w1 + w2);
+		}
+	}
+	return weights;
+}
+
 #endif

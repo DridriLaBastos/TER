@@ -23,14 +23,12 @@ class GraphFileReader
 		}
 
 		//TODO: faire une petite gestion des erreurs dans le parser
-		std::pair<Vertices,Edges> readFile (VertexStructContainer& container)
+		std::pair<Vertices,Edges> readFile (VertexContainer& container)
 		{
 			std::pair<Vertices,Edges> ret;
-			std::vector<Vertex*> vertexStructToVertexPtr;
 			container.clear();
 			ret.first.reserve(1000000);   ret.second.reserve(1000000);
 			container.resize(1000000);
-			vertexStructToVertexPtr.resize(container.size());
 
 			std::cout << "Begin reading... ";
 			auto begin = std::chrono::system_clock::now();
@@ -43,10 +41,15 @@ class GraphFileReader
 				unsigned int vertexCount = 0;
 				unsigned int weightCount = 1;
 				extractVertexCountAndWeightCount(vertexCount,weightCount);
-				parseVertices(ret.first,container,vertexCount,vertexStructToVertexPtr);
+
+				if (weightCount != WEIGHTS_SIZE)
+					throw std::logic_error("WLMC is compiled for vertex with " + std::to_string(WEIGHTS_SIZE) + 
+						" weights, but '" + m_path + "' contains vertices with " + std::to_string(vertexCount) + " weights");
+
+				parseVertices(ret.first,container,vertexCount,weightCount);
 			}
 			else
-				parseEdge(ret,container,vertexStructToVertexPtr);
+				parseEdge(ret,container);
 
 			do
 			{
@@ -55,7 +58,7 @@ class GraphFileReader
 					break;
 
 				if (!isCommentLine())
-					parseEdge(ret,container,vertexStructToVertexPtr);
+					parseEdge(ret,container);
 				
 			} while (!m_stream.eof());
 			auto end = std::chrono::system_clock::now();
@@ -98,12 +101,25 @@ class GraphFileReader
 				m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
 		};
 
-		void parseVertices (Vertices& vertices, VertexStructContainer& container, const unsigned int vertexCount, std::vector<Vertex*>& vertexStructToVertexPtr)
+		void parseVertexWeights(Vertices& vertices, VertexContainer& container, const unsigned int vertexNumber, const unsigned int weightCount)
+		{
+			Weight w;
+
+			for (size_t i = 0; i < weightCount; ++i)
+			{
+				w[i] = extractUInt();
+				passWhites();
+			}
+
+			findVertexAndEmplaceIfNot(vertexNumber,vertices,container,w);
+		}
+
+		void parseVertices (Vertices& vertices, VertexContainer& container, const unsigned int vertexCount, const unsigned int weightCount)
 		{
 			for (size_t i = 0; i < vertexCount; ++i)
 			{
 				readLine();
-				findVertexAndEmplaceIfNot(i+1,vertices,container,vertexStructToVertexPtr, extractUInt());
+				parseVertexWeights(vertices,container,i+1,weightCount);
 			}
 		}
 
@@ -113,47 +129,42 @@ class GraphFileReader
 
 			passWhites();
 			vertexCount = extractUInt();
-			return;
 
 			if (passWhites())
 				weightCount = extractUInt();
 		}
 
-		Vertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexStructContainer& container, std::vector<Vertex*>& vertexStructToVertexPtr, Weight w = 1)
+		Vertex findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexContainer& container, const Weight w = { 1 })
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())
-			{
-				container.resize(container.size() + 100000);
-				vertexStructToVertexPtr.resize(container.size());
-			}
+				container.resize(container.size() * 2);
 			
 			if (container[vertexNumber].get() == nullptr)
 			{
 				container[vertexNumber] = std::unique_ptr<VertexStruct>(new VertexStruct(vertexNumber,w));
 				vertices.emplace_back(container[vertexNumber].get());
-				vertexStructToVertexPtr[vertexNumber] = &vertices.back();
 			}
 
-			return *vertexStructToVertexPtr[vertexNumber];
+			return container[vertexNumber].get();
 		}
 
-		void findEdgeFromVerticesAndEmplaceIfNot(Vertex& v1, Vertex&v2, Edges& edges)
+		void findEdgeFromVerticesAndEmplaceIfNot(const Vertex& v1, const Vertex&v2, Edges& edges) const
 		{
 			//Si une arête existe entre ces sommets, alors chacun des sommets à l'autre dans ses voisins. Pour vérifier
 			//si une arrête existe ou pas, il suffit donc de chercher un des sommets dans la liste des voisins de l'autre.
 			//Il n'y a pas besoin de tester les deux listes de voisins que si un sommet est dans les voisins d'un autre
 			//les deux sont forcément voisin l'un de l'autre (voir makeEdge)
 			//Wouah *_*
-			auto found = std::find_if(v1.neighbors.begin(), v1.neighbors.end(),
-				[&v2](const VertexStructPtr vs)
+			auto found = std::find_if(v1->neighbors.begin(), v1->neighbors.end(),
+				[&v2](const Vertex& vs)
 				{ return vs == v2; });
 			
-			if (found == v1.neighbors.end())
+			if (found == v1->neighbors.end())
 				edges.emplace_back(makeEdge(v1,v2));
 		}
 
-		void parseEdge(std::pair<Vertices,Edges>& pair, VertexStructContainer& container, std::vector<Vertex*>& vertexStructToVertexPtr)
+		void parseEdge(std::pair<Vertices,Edges>& pair, VertexContainer& container)
 		{
 			//A priori le fichier n'est pas trié, il n'y a donc aucune garantie que le noeud lu n'ait pas
 			//déjà été trouvé, il faut donc le rechercher et le créer s'il n'existe pas
@@ -164,8 +175,8 @@ class GraphFileReader
 			passWhites();
 			const unsigned int n2 = extractUInt();
 			
-			Vertex& v1 = findVertexAndEmplaceIfNot(n1,pair.first,container,vertexStructToVertexPtr);
-			Vertex& v2 = findVertexAndEmplaceIfNot(n2,pair.first,container,vertexStructToVertexPtr);
+			const Vertex v1 = findVertexAndEmplaceIfNot(n1,pair.first,container);
+			const Vertex v2 = findVertexAndEmplaceIfNot(n2,pair.first,container);
 
 			//Une fois que l'on a trouvé les vertex correspondant aux valeurs que l'on a lu du fichier,
 			//il faut vérifier que l'arrête qu'ils forment n'existe pas déjà car rien ne garantit
