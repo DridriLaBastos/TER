@@ -9,7 +9,7 @@
 #include <iostream>
 #include <algorithm>
 
-using Weight = int;
+#include "weight.hpp"
 
 struct VertexStruct
 {
