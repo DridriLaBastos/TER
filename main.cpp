@@ -186,15 +186,22 @@ Clique WLMC(const Graph& G)
 
 		if ((P.weight() + vi.weight()) > Cmax.weight())
 		{
+			bool cliqueReplaced = false;
 			InitReturnType ip = initialize(G[P], Cmax.weight() - vi.weight());
 
 			if ((ip.C0.weight() + vi.weight()) > Cmax.weight())
+			{
 				Cmax = Vertices::unionBetween(ip.C0, vi);
+				cliqueReplaced = true;
+			}
 
 			Clique Cp = searchMaxWClique(ip.Gp, Cmax, { {vi} }, ip.O0);
 
 			if (Cp.weight() > Cmax.weight())
+			{
 				Cmax = Cp;
+				cliqueReplaced = true;
+			}
 		}
 	}
 	const auto end = std::chrono::steady_clock::now();

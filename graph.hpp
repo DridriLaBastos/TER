@@ -239,16 +239,20 @@ public:
 		Graph ret;
 		ret.m_vertices = V;
 
+		//Dans le nouveau graphe, les sommets n'ont encore aucun voisin car on a pas ajouté les arrêtes. Il faut donc les supprimer
+		for (Vertex& v : ret.m_vertices)
+			v.neighbors.clear();
+
 		for(const Edge& e: m_edges)
 		{
 			bool findFirst = false;
 			bool findSecond = false;
 
+			size_t posFirst = 0;
+			size_t posSecond = 0;
+
 			for (size_t i = 0; i < ret.m_vertices.size(); ++i)
 			{
-				size_t posFirst = 0;
-				size_t posSecond = 0;
-
 				if (ret.m_vertices[i] == e.first)
 				{
 					findFirst = true;
