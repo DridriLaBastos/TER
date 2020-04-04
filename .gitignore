@@ -21,6 +21,8 @@
 *.json
 temp.cpp
 graphs/*
+temp.cpp
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
