@@ -15,6 +15,7 @@
 *.userprefs
 
 .vscode
+.DS_Store
 *.out
 *.dSYM
 *.json
