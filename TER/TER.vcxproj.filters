@@ -18,12 +18,6 @@
     <ClInclude Include="..\graph.hpp">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="..\graphCopy.hpp">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
-    <ClInclude Include="..\instrumentor.hpp">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="..\graphFileReader.hpp">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
