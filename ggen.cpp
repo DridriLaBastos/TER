@@ -8,27 +8,21 @@ static unsigned int vertexNumber;
 static unsigned int edgeNumber;
 static unsigned int weightNumber;
 
-struct EdgeVertex
-{
-	unsigned int vertexNumber;
-	unsigned int edgesCount;
-};
-
-std::vector<EdgeVertex> edgeVertex;
+std::vector<std::pair<unsigned int, std::vector<unsigned int>>> possibleEdges;
 
 void genWeights(std::ofstream& stream, const unsigned int vertexID)
 {
 	std::random_device device;
 	std::uniform_int_distribution<unsigned int> distr (vertexID%1000, 10000);
 
-	for (size_t i = 0; i < weightNumber; ++i)
-	{
-		stream << distr(device);
-		if (1 != weightNumber - 1)
-			stream << " ";
-	}
+	//for (size_t i = 0; i < weightNumber; ++i)
+	//{
+	//	stream << distr(device);
+	//	if (1 != weightNumber - 1)
+	//		stream << " ";
+	//}
 	
-	stream << "\n";
+	stream << 1 << "\n";
 }
 
 void genVertices (std::ofstream& stream)
@@ -37,39 +31,46 @@ void genVertices (std::ofstream& stream)
 		genWeights(stream, i+1);
 }
 
-unsigned int getEdgeableVertex (unsigned int vertexNumber)
-{
-	while (true)
-	{
-		if(vertexNumber == edgeVertex.size())
-			vertexNumber = 0;
-		
-		if (edgeVertex[vertexNumber].edgesCount != 0)
-		{
-			edgeVertex[vertexNumber].edgesCount -= 1;
-			break;
-		}
-		++vertexNumber;
-	}
-
-	return edgeVertex[vertexNumber].vertexNumber;
-}
+//unsigned int getEdgeableVertex (unsigned int vertexNumber)
+//{
+//	while (true)
+//	{
+//		if(vertexNumber == edgeVertex.size())
+//			vertexNumber = 0;
+//		
+//		if (edgeVertex[vertexNumber].edgesCount != 0)
+//		{
+//			edgeVertex[vertexNumber].edgesCount -= 1;
+//			break;
+//		}
+//		++vertexNumber;
+//	}
+//
+//	return edgeVertex[vertexNumber].vertexNumber;
+//}
 
 void genEdges (std::ofstream& stream)
 {
 	std::random_device device;
-	std::uniform_int_distribution<unsigned int> distr (0, vertexNumber-1);
 
 	for (size_t i = 0; i < edgeNumber; ++i)
 	{
-		//distr gen vertex number between 0 and |V|-1
-		unsigned int firstVertex = getEdgeableVertex(distr(device));
-		unsigned int secondVertex = getEdgeableVertex(distr(device));
+		std::uniform_int_distribution<unsigned int> distr1 (0, possibleEdges.size()-1);
+		const unsigned int firstVertex = distr1(device);
 
-		while (secondVertex == firstVertex)
-			secondVertex = getEdgeableVertex(distr(device));
-			
-		stream << firstVertex << " " << secondVertex << "\n";
+		std::uniform_int_distribution<unsigned int> distr2 (0, possibleEdges[firstVertex].second.size()-1);
+		const unsigned int secondVertex = distr2(device);
+
+		stream << (possibleEdges[firstVertex].first + 1) << " " << (possibleEdges[firstVertex].second[secondVertex] + 1) << std::endl;
+
+		std::swap(possibleEdges[firstVertex].second[secondVertex],possibleEdges[firstVertex].second.back());
+		possibleEdges[firstVertex].second.pop_back();
+
+		if (possibleEdges[firstVertex].second.empty())
+		{
+			std::swap(possibleEdges[firstVertex], possibleEdges.back());
+			possibleEdges.pop_back();
+		}
 	}
 }
 
@@ -78,7 +79,7 @@ float computeGraphDensity(void)
 	const float floatVertexNumber = vertexNumber;
 	const float floatEdgeNumber = edgeNumber;
 	//Simply applying the formula
-	return (2*floatVertexNumber) / (floatVertexNumber * floatVertexNumber - floatEdgeNumber);
+	return (2.f*floatEdgeNumber) / (floatVertexNumber * floatVertexNumber - floatVertexNumber);
 }
 
 void genFile (std::ofstream& stream)
@@ -125,8 +126,7 @@ int main (int argc, const char** argv)
 	const unsigned int maximumNumberOfEdges = (vertexNumber * (vertexNumber-1)) >> 1;
 
 	if (weightNumber >= 5)
-		std::cout << "WARNING: too many weights may lead to the program taking more time to complete" << std::endl;
-
+		std::cout << "WARNING: too many weights leads to the program taking more time to find the best cliques" << std::endl;
 
 	if (edgeNumber > maximumNumberOfEdges)
 	{
@@ -135,12 +135,16 @@ int main (int argc, const char** argv)
 	}
 
 	std::cout << "INFO: w=" << weightNumber << "   |V|=" << vertexNumber << "   |E|=" << edgeNumber << std::endl;
-	edgeVertex.resize(vertexNumber);
 
-	for (size_t i = 0; i < vertexNumber; ++i)
+	possibleEdges.resize(vertexNumber-1);
+
+	for (size_t i = 0; i < vertexNumber-1; ++i)
 	{
-		edgeVertex[i].vertexNumber = i+1;
-		edgeVertex[i].edgesCount = vertexNumber - 1;
+		possibleEdges[i].first = i;
+		possibleEdges[i].second.resize(vertexNumber - (i + 1));
+		
+		for (size_t j = 0; j < possibleEdges[i].second.size(); ++j)
+			possibleEdges[i].second[j] = j+i+1;
 	}
 
 	genFile(file);
