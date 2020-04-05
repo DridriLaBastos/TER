@@ -16,12 +16,13 @@
 
 .vscode
 .DS_Store
+wlmc
+ggen
 *.out
 *.dSYM
 *.json
 temp.cpp
 graphs/*
-temp.cpp
 
 # Build results
 [Dd]ebug/

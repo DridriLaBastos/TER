@@ -1,13 +1,11 @@
+export CXXFLAGS = --std=c++11 -W -Wextra
 CXXSRC = $(wildcard *.cpp)
 CXXHEADER = $(wildcard *.hpp)
-EXEC = wlmc.out
 
-.PHONY: clean
+all: wlmc ggen
 
-all: $(EXEC)
+wlmc: wlmc.cpp $(CXXHEADER)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O3 $< -o $@
 
-$(EXEC) : $(CXXSRC) $(CXXHEADER)
-	$(CXX) $(CPPFLAGS) --std=c++11 -W -Wextra -g $(CXXSRC) -o $@
-
-clean:
-	rm $(EXEC)
+ggen: ggen.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O3 $< -o $@
