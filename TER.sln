@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TER", "TER\TER.vcxproj", "{CC3D8D42-599D-495B-A77F-FDC023D6B7A3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WLMC", "TER\TER.vcxproj", "{CC3D8D42-599D-495B-A77F-FDC023D6B7A3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GGen", "GGen\GGen.vcxproj", "{1FBCFE00-23B1-43C0-8813-213C363442D8}"
 EndProject

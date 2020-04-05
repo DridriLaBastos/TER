@@ -1,3 +1,4 @@
+#include <cctype>
 #include <random>
 #include <vector>
 #include <fstream>
