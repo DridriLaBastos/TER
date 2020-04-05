@@ -54,17 +54,6 @@ bool operator<= (const Weights& weights, const Weight& W)
 	return true;
 }
 
-std::ostream& operator<< (std::ostream& stream, const Weight& w)
-{
-	stream << "{" << w[0];
-
-	for (size_t i = 1; i < WEIGHTS_SIZE; ++i)
-		stream << ", " << w[i];
-	
-	stream << "}";
-	return stream;
-}
-
 Weight& operator+= (Weight& w1, const Weight& w2)
 {
 	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
@@ -112,6 +101,17 @@ Weights& operator+= (Weights& weights, const Weights& toAdd)
 		}
 	}
 	return weights;
+}
+
+std::ostream& operator<< (std::ostream& stream, const Weight& w)
+{
+	stream << "{" << w[0];
+
+	for (size_t i = 1; i < WEIGHTS_SIZE; ++i)
+		stream << ", " << w[i];
+	
+	stream << "}";
+	return stream;
 }
 
 #endif
