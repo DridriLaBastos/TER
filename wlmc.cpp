@@ -4,7 +4,7 @@
 #include <signal.h>
 
 #include "graph.hpp"
-//#include "graphFileReader.hpp"
+#include "graphFileReader.hpp"
 
 struct InitReturnType
 {
@@ -213,7 +213,7 @@ Cliques searchMaxWCliques(const Graph& G, const Clique Cmax, const Clique& C, co
 	return results;
 }
 
-Cliques WLMC(const Graph& G)
+Cliques WLMC(const Graph& G, long long& duration)
 {
 	const auto start = std::chrono::steady_clock::now();
 	InitReturnType i = initialize(G, {});
@@ -291,7 +291,7 @@ Cliques WLMC(const Graph& G)
 	}
 	const auto end = std::chrono::steady_clock::now();
 
-	std::cout << "WLMC took: " << std::chrono::duration_cast<std::chrono::seconds>(end-start).count() << "s" << std::endl;
+	duration = std::chrono::duration_cast<std::chrono::seconds>(end-start).count();
 	return Cmax;
 }
 
@@ -326,12 +326,6 @@ static void signalHandler(const int sigNum)
 	exit(EXIT_FAILURE);
 }
 
-//#define HAND
-
-#ifndef HAND
-	#include "graphFileReader.hpp"
-#endif
-
 static void setup (void)
 {
 	//_MSC_VER est une macro contenant la version du compilateur msvc utilisé par windows. On utilise cette
@@ -347,121 +341,25 @@ static void setup (void)
 
 int main(int argc, const char** argv)
 {
-#ifndef HAND
 	if (argc != 2)
 	{
 		std::cerr << "arguments are <file path>\n";
 		return EXIT_FAILURE;
 	}
-#endif
+
 	setup();
-#ifdef HAND
-	std::unique_ptr<VertexStruct> v1 (new VertexStruct(1,{20,4}));
-	std::unique_ptr<VertexStruct> v2 (new VertexStruct(2,{10,4}));
-	std::unique_ptr<VertexStruct> v3 (new VertexStruct(3,{10,4}));
-	std::unique_ptr<VertexStruct> v4 (new VertexStruct(4,{10,4}));
-	std::unique_ptr<VertexStruct> v5 (new VertexStruct(5,{10,4}));
 
-	std::unique_ptr<VertexStruct> v6 (new VertexStruct(6,{10,48}));
-	std::unique_ptr<VertexStruct> v7 (new VertexStruct(7,{9,69}));
-	std::unique_ptr<VertexStruct> v8 (new VertexStruct(8,{19,79}));
-	std::unique_ptr<VertexStruct> v9 (new VertexStruct(9,{1,1}));
-	std::unique_ptr<VertexStruct> v10 (new VertexStruct(10,{8,1}));
-
-	std::unique_ptr<VertexStruct> v11 (new VertexStruct(11,{1,49}));
-	std::unique_ptr<VertexStruct> v12 (new VertexStruct(12,{10,30}));
-	std::unique_ptr<VertexStruct> v13 (new VertexStruct(13,{10,10}));
-	std::unique_ptr<VertexStruct> v14 (new VertexStruct(14,{10,10}));
-	std::unique_ptr<VertexStruct> v15 (new VertexStruct(15,{0,80}));
-
-	std::unique_ptr<VertexStruct> v16 (new VertexStruct(16,{1,4}));
-	std::unique_ptr<VertexStruct> v17 (new VertexStruct(17,{1,2}));
-	std::unique_ptr<VertexStruct> v18 (new VertexStruct(18,{1,1}));
-	std::unique_ptr<VertexStruct> v19 (new VertexStruct(19,{9997,2}));
-
-	std::pair<Vertices, Edges> pair;
-	pair.first.emplace_back(v1.get());
-	pair.first.emplace_back(v2.get());
-	pair.first.emplace_back(v3.get());
-	pair.first.emplace_back(v4.get());
-	pair.first.emplace_back(v5.get());
-	pair.first.emplace_back(v6.get());
-	pair.first.emplace_back(v7.get());
-	pair.first.emplace_back(v8.get());
-	pair.first.emplace_back(v9.get());
-	pair.first.emplace_back(v10.get());
-	pair.first.emplace_back(v11.get());
-	pair.first.emplace_back(v12.get());
-	pair.first.emplace_back(v13.get());
-	pair.first.emplace_back(v14.get());
-	pair.first.emplace_back(v15.get());
-	pair.first.emplace_back(v16.get());
-	pair.first.emplace_back(v17.get());
-	pair.first.emplace_back(v18.get());
-	pair.first.emplace_back(v19.get());
-	
-	pair.second.emplace_back(makeEdge(v1.get(),v2.get()));
-	pair.second.emplace_back(makeEdge(v1.get(),v3.get()));
-	pair.second.emplace_back(makeEdge(v1.get(),v4.get()));
-	pair.second.emplace_back(makeEdge(v1.get(),v5.get()));
-	pair.second.emplace_back(makeEdge(v1.get(),v6.get()));
-
-	pair.second.emplace_back(makeEdge(v2.get(),v3.get()));
-	pair.second.emplace_back(makeEdge(v2.get(),v4.get()));
-	pair.second.emplace_back(makeEdge(v2.get(),v5.get()));
-
-	pair.second.emplace_back(makeEdge(v3.get(),v4.get()));
-	pair.second.emplace_back(makeEdge(v3.get(),v5.get()));
-	pair.second.emplace_back(makeEdge(v3.get(),v6.get()));
-
-	pair.second.emplace_back(makeEdge(v4.get(),v5.get()));
-	pair.second.emplace_back(makeEdge(v4.get(),v6.get()));
-
-	pair.second.emplace_back(makeEdge(v9.get(),v6.get()));
-	pair.second.emplace_back(makeEdge(v9.get(),v7.get()));
-	pair.second.emplace_back(makeEdge(v9.get(),v8.get()));
-	pair.second.emplace_back(makeEdge(v9.get(),v10.get()));
-	pair.second.emplace_back(makeEdge(v9.get(),v11.get()));
-	pair.second.emplace_back(makeEdge(v9.get(),v12.get()));
-
-	pair.second.emplace_back(makeEdge(v10.get(),v11.get()));
-
-	pair.second.emplace_back(makeEdge(v13.get(),v12.get()));
-	pair.second.emplace_back(makeEdge(v13.get(),v14.get()));
-	pair.second.emplace_back(makeEdge(v13.get(),v15.get()));
-
-	pair.second.emplace_back(makeEdge(v14.get(),v12.get()));
-
-	pair.second.emplace_back(makeEdge(v15.get(),v16.get()));
-	pair.second.emplace_back(makeEdge(v15.get(),v17.get()));
-	pair.second.emplace_back(makeEdge(v15.get(),v18.get()));
-	pair.second.emplace_back(makeEdge(v15.get(),v19.get()));
-	
-	pair.second.emplace_back(makeEdge(v16.get(),v17.get()));
-	pair.second.emplace_back(makeEdge(v16.get(),v18.get()));
-	pair.second.emplace_back(makeEdge(v16.get(),v19.get()));
-	
-	pair.second.emplace_back(makeEdge(v17.get(),v18.get()));
-	pair.second.emplace_back(makeEdge(v17.get(),v19.get()));
-	
-	pair.second.emplace_back(makeEdge(v18.get(),v19.get()));
-#else
+	long long WLMCDuration = 0;
 	VertexStructContainer container;
 	GraphFileReader reader (argv[1]);
 	std::pair<Vertices, Edges> pair = reader.readFile(container);
-#endif
 
-	Cliques Cmax = WLMC(Graph(pair.first,pair.second));
+	Cliques Cmax = WLMC(Graph(pair.first,pair.second),WLMCDuration);
 
 	for (Clique& c: Cmax.set)
 		std::sort(c.begin(),c.end(),[](const Vertex& a, const Vertex& b) { return a.num() < b.num(); });
 	std::cout << Cmax << std::endl;
 
-	std::cout << "found: " << Cmax.set.size() << " cliques" << std::endl;
-	//std::cout << "is clique..." << std::boolalpha << isClique(Cmax,pair.second) << std::endl;
-
-
-	//getBranches(Graph(pair.first, pair.second), { 5,4 }, { v1.get() ,v2.get(),v3.get(),v4.get(),v5.get(),v6.get() });
-
+	std::cout << "found: " << Cmax.set.size() << " cliques   took: " << WLMCDuration << "s" << std::endl;
 	return EXIT_SUCCESS;
 }

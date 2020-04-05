@@ -447,7 +447,11 @@ std::ostream& operator<< (std::ostream& stream, const Vertices& vs)
 {
 	std::cout << "{ ";
 	for (size_t i = 0; i < vs.size(); ++i)
-		std::cout << vs[i] << " ";
+	{
+		std::cout << vs[i];
+		if (i < vs.size()-1)
+			std::cout << " | ";
+	}
 	std::cout << "}   weight: " << vs.weight();
 
 	return stream;
