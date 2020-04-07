@@ -115,7 +115,7 @@ class GraphFileReader
 			float result = 0.f;
 			float INTPart = 0.f;
 			float DECPart = 0.f;
-			float mult = 1.f;
+			float mult = .1f;
 
 			if (*m_lineBufferPtr == '-')
 			{
@@ -125,21 +125,19 @@ class GraphFileReader
 
 			while (std::isdigit(*m_lineBufferPtr))
 			{
-				DECPart *= 10.f;
-				DECPart += (float)(*m_lineBufferPtr - '0');
+				INTPart *= 10.f;
+				INTPart += (float)(*m_lineBufferPtr - '0');
 				++m_lineBufferPtr;
 			}
 
 			if (*m_lineBufferPtr == '.')
 				++m_lineBufferPtr;
-			
-			mult = .1f;
 
 			while (std::isdigit(*m_lineBufferPtr))
 			{
-				const float read = (*m_lineBufferPtr - '0') / mult;
-				mult /= 10.f;
+				const float read = (*m_lineBufferPtr - '0') * mult;
 				DECPart += read;
+				mult /= 10.f;
 				++m_lineBufferPtr;
 			}
 			
