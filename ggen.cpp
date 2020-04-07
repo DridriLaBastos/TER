@@ -13,41 +13,24 @@ std::vector<std::pair<unsigned int, std::vector<unsigned int>>> possibleEdges;
 void genWeights(std::ofstream& stream, const unsigned int vertexID)
 {
 	std::random_device device;
-	std::uniform_int_distribution<unsigned int> distr (vertexID%1000, 10000);
+	std::uniform_int_distribution<unsigned int> distr (vertexID%100, 300);
 
-	//for (size_t i = 0; i < weightNumber; ++i)
-	//{
-	//	stream << distr(device);
-	//	if (1 != weightNumber - 1)
-	//		stream << " ";
-	//}
-	
-	stream << 1 << "\n";
+	for (size_t i = 0; i < weightNumber; ++i)
+	{
+		stream << distr(device);
+		if (i != weightNumber - 1)
+			stream << " ";
+	}
 }
 
 void genVertices (std::ofstream& stream)
 {
 	for (size_t i = 0; i < vertexNumber; ++i)
+	{
 		genWeights(stream, i+1);
+		stream << std::endl;
+	}
 }
-
-//unsigned int getEdgeableVertex (unsigned int vertexNumber)
-//{
-//	while (true)
-//	{
-//		if(vertexNumber == edgeVertex.size())
-//			vertexNumber = 0;
-//		
-//		if (edgeVertex[vertexNumber].edgesCount != 0)
-//		{
-//			edgeVertex[vertexNumber].edgesCount -= 1;
-//			break;
-//		}
-//		++vertexNumber;
-//	}
-//
-//	return edgeVertex[vertexNumber].vertexNumber;
-//}
 
 void genEdges (std::ofstream& stream)
 {
