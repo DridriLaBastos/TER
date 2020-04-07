@@ -102,6 +102,45 @@ class GraphFileReader
 				m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
 		};
 
+		float getFloat(void)
+		{
+			bool foundMinus = false;
+			float result = 0.f;
+			float INTPart = 0.f;
+			float DECPart = 0.f;
+			float mult = 1.f;
+
+			if (*m_lineBufferPtr == '-')
+			{
+				++m_lineBufferPtr;
+				foundMinus = true;
+			}
+
+			while (std::isdigit(*m_lineBufferPtr))
+			{
+				DECPart *= 10.f;
+				DECPart += (float)(*m_lineBufferPtr - '0');
+				++m_lineBufferPtr;
+			}
+
+			if (*m_lineBufferPtr == '.')
+				++m_lineBufferPtr;
+			
+			mult = .1f;
+
+			while (std::isdigit(*m_lineBufferPtr))
+			{
+				const float read = (*m_lineBufferPtr - '0') / mult;
+				mult /= 10.f;
+				DECPart += read;
+				++m_lineBufferPtr;
+			}
+			
+			result = INTPart + DECPart;
+
+			return foundMinus ? -result : result;
+		}
+
 		void parseVertexWeights(Vertices& vertices, VertexStructContainer& container, std::vector<Vertex*>& vertexStructToVertexPtr, unsigned int vertexNumber, const unsigned int weightCount)
 		{
 			Weight w;
