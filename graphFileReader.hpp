@@ -69,6 +69,13 @@ class GraphFileReader
 			ret.first.shrink_to_fit();
 			ret.second.shrink_to_fit();
 			container.shrink_to_fit();
+
+			const size_t vertices	= ret.first.size();
+			const size_t edges		= ret.second.size();
+			const float density = 2.f*(float)edges / (float)(vertices * vertices - vertices);
+
+			std::cout << "|V|=" << vertices << "   |E|=" << edges << "   d=" << density << std::endl;
+
 			return ret;
 		}
 	
@@ -147,7 +154,7 @@ class GraphFileReader
 
 			for (size_t i = 0; i < weightCount; ++i)
 			{
-				w[i] = extractUInt();
+				w[i] = getFloat();
 				passWhites();
 			}
 
@@ -174,7 +181,7 @@ class GraphFileReader
 				weightCount = extractUInt();
 		}
 
-		Vertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexStructContainer& container, std::vector<Vertex*>& vertexStructToVertexPtr, const Weight w = {1})
+		Vertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexStructContainer& container, std::vector<Vertex*>& vertexStructToVertexPtr, const Weight w = {1.f})
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())
