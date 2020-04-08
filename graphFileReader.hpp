@@ -69,6 +69,13 @@ class GraphFileReader
 			ret.first.shrink_to_fit();
 			ret.second.shrink_to_fit();
 			container.shrink_to_fit();
+
+			const size_t vertices	= ret.first.size();
+			const size_t edges		= ret.second.size();
+			const float density = 2.f*(float)edges / (float)(vertices * vertices - vertices);
+
+			std::cout << "|V|=" << vertices << "   |E|=" << edges << "   d=" << density << std::endl;
+
 			return ret;
 		}
 	
@@ -102,13 +109,50 @@ class GraphFileReader
 				m_stream.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
 		};
 
+		float getFloat(void)
+		{
+			bool foundMinus = false;
+			float result = 0.f;
+			float INTPart = 0.f;
+			float DECPart = 0.f;
+			float mult = .1f;
+
+			if (*m_lineBufferPtr == '-')
+			{
+				++m_lineBufferPtr;
+				foundMinus = true;
+			}
+
+			while (std::isdigit(*m_lineBufferPtr))
+			{
+				INTPart *= 10.f;
+				INTPart += (float)(*m_lineBufferPtr - '0');
+				++m_lineBufferPtr;
+			}
+
+			if (*m_lineBufferPtr == '.')
+				++m_lineBufferPtr;
+
+			while (std::isdigit(*m_lineBufferPtr))
+			{
+				const float read = (*m_lineBufferPtr - '0') * mult;
+				DECPart += read;
+				mult /= 10.f;
+				++m_lineBufferPtr;
+			}
+			
+			result = INTPart + DECPart;
+
+			return foundMinus ? -result : result;
+		}
+
 		void parseVertexWeights(Vertices& vertices, VertexStructContainer& container, std::vector<Vertex*>& vertexStructToVertexPtr, unsigned int vertexNumber, const unsigned int weightCount)
 		{
 			Weight w;
 
 			for (size_t i = 0; i < weightCount; ++i)
 			{
-				w[i] = extractUInt();
+				w[i] = getFloat();
 				passWhites();
 			}
 
@@ -135,7 +179,7 @@ class GraphFileReader
 				weightCount = extractUInt();
 		}
 
-		Vertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexStructContainer& container, std::vector<Vertex*>& vertexStructToVertexPtr, const Weight w = {1})
+		Vertex& findVertexAndEmplaceIfNot(const unsigned int vertexNumber, Vertices& vertices, VertexStructContainer& container, std::vector<Vertex*>& vertexStructToVertexPtr, const Weight w = {1.f})
 		{
 			//On utilise le numéro du sommet pour trouver sa place dans le graphe, du coup il faut être sûr que le container est assez grand pour contenir tous les sommets
 			if (vertexNumber >= container.size())

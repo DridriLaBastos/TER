@@ -117,7 +117,7 @@ int main (int argc, const char** argv)
 		edgeNumber = maximumNumberOfEdges;
 	}
 
-	std::cout << "INFO: w=" << weightNumber << "   |V|=" << vertexNumber << "   |E|=" << edgeNumber << std::endl;
+	std::cout << "INFO: w=" << weightNumber << "   |V|=" << vertexNumber << "   |E|=" << edgeNumber << "   d=" << computeGraphDensity() << std::endl;
 
 	possibleEdges.resize(vertexNumber-1);
 
