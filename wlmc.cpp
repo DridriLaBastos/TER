@@ -179,7 +179,7 @@ Vertices getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 	return B;
 }
 
-Cliques searchMaxWCliques(const Graph& G, const Clique Cmax, const Clique& C, const VertexOrdering& O)
+Cliques searchMaxWCliques(const Graph& G, const Clique& Cmax, const Clique& C, const VertexOrdering& O)
 {
 	if (G.empty())
 		return {{ C }};

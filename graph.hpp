@@ -273,7 +273,7 @@ struct VerticesSet
 
 	void tryInsertAndRemoveDominated (const Vertices& vs)
 	{
-		set.emplace_back(vs);
+		bool insert = true;
 
 		for (size_t i = 0; i < set.size() - 1; ++i)
 		{
@@ -281,7 +281,7 @@ struct VerticesSet
 			//l'algorithme s'arrête là
 			if (vs.weight() <= set[i].weight())
 			{
-				set.pop_back();
+				insert = false;
 				break;
 			}
 			//Si le poids ajouté domine un autre poids, on supprime ce poids dominé en gardant le poids que l'on
@@ -290,10 +290,12 @@ struct VerticesSet
 			{
 				std::swap(set.back(), set[i]);
 				set.pop_back();
-				std::swap(set.back(), set[i]);
 				--i;
 			}
 		}
+
+		if (insert)
+			set.emplace_back(vs);
 	}
 };
 
@@ -309,6 +311,7 @@ public:
 	Graph operator[](const Vertices& V) const
 	{
 		Graph ret(V);
+		ret.m_edges.reserve((V.size() * (V.size()-1))/2);
 
 		//Dans le nouveau graphe, les sommets n'ont encore aucun voisin car on a pas ajouté les arrêtes. Il faut donc les supprimer
 		for (Vertex& v : ret.m_vertices)
@@ -342,7 +345,7 @@ public:
 				}
 			}
 		}
-
+		ret.m_edges.shrink_to_fit();
 		return ret;
 	}
 
