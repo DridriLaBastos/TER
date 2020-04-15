@@ -17,6 +17,7 @@
 .vscode
 .DS_Store
 wlmc
+test
 ggen
 *.out
 *.dSYM
