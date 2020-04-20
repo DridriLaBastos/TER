@@ -174,7 +174,7 @@ Vertices getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 		if (vertexShouldBeAddedToBranche)
 			B.emplace_back(v);
 	}
-
+	
 	B.orderWith(O);
 	return B;
 }
@@ -229,15 +229,23 @@ Cliques WLMC(const Graph& G, long long& duration)
 		bool cliqueToImproveFound = false;
 		Clique cliqueToImprove;
 
-		//On cherche une clique qui pourrait potentiellement être moins bonne, si on la trouve
-		//on la sauvegarde pour l'utiliser.
+		//Si le poids estimé d'une clique est dominé par une clique de l'ensemble nous n'essayons même pas
+		// de construire une clique
 		for (size_t i = 0; i < Cmax.set.size(); ++i)
 		{
+			if (Cmax.set[i].weight() > (P.weight() + vi.weight()))
+			{
+				cliqueToImproveFound = false;
+				break;
+			}
+
 			if (!((P.weight() + vi.weight()) <= Cmax.set[i].weight()))
 			{
-				cliqueToImproveFound = true;
-				cliqueToImprove = Cmax.set[i];
-				break;
+				if (!cliqueToImproveFound)
+				{
+					cliqueToImprove = Cmax.set[i];
+					cliqueToImproveFound = true;
+				}
 			}
 		}
 
