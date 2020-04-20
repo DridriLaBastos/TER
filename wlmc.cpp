@@ -229,16 +229,19 @@ Cliques WLMC(const Graph& G, long long& duration)
 		bool cliqueToImproveFound = false;
 		Clique cliqueToImprove;
 
-		//Si le poids estimé d'une clique est dominé par une clique de l'ensemble nous n'essayons même pas
-		// de construire une clique
+		//Si le poid estimé d'une clique est dominé par une clique de l'ensemble de pareto, on passe directement
+		//au sommet suivant. Dans le cas où cette condition n'arrive pas, on garde en mémoire la première clique
+		//que l'on trouve potentiellement améliorable
 		for (size_t i = 0; i < Cmax.set.size(); ++i)
 		{
+			//Le poids potentiel est dominé
 			if (Cmax.set[i].weight() > (P.weight() + vi.weight()))
 			{
 				cliqueToImproveFound = false;
 				break;
 			}
 
+			//On enregistre la première clique améliorable
 			if (!((P.weight() + vi.weight()) <= Cmax.set[i].weight()))
 			{
 				if (!cliqueToImproveFound)
