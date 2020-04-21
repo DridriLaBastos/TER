@@ -1,5 +1,6 @@
 #include <cctype>
 #include <random>
+#include <chrono>
 #include <vector>
 #include <fstream>
 #include <iostream>
@@ -118,9 +119,10 @@ int main (int argc, const char** argv)
 	}
 
 	std::cout << "INFO: w=" << weightNumber << "   |V|=" << vertexNumber << "   |E|=" << edgeNumber << "   d=" << computeGraphDensity() << std::endl;
+	std::cout << "Begin generation... took: ";
 
 	possibleEdges.resize(vertexNumber-1);
-
+	const auto start = std::chrono::steady_clock::now();
 	for (size_t i = 0; i < vertexNumber-1; ++i)
 	{
 		possibleEdges[i].first = i;
@@ -131,6 +133,8 @@ int main (int argc, const char** argv)
 	}
 
 	genFile(file);
+	const auto end = std::chrono::steady_clock::now();
+	std::cout << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << "s" << std::endl;
 
 	return EXIT_SUCCESS;
 }

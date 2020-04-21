@@ -1,3 +1,5 @@
+Toutes les mesures de temps sont faite sur une distribution Linux installée sur un SSD Transend 560Mo/s en lecture et 460Mo/s en écriture avec un processeur intel core i5-6500 à 3.2GHz
+# Temps d'execution
 500 vertices =================================================>
  - 1k   (0.008)		: 0
  - 2k   (0.016)		: 0
@@ -30,3 +32,43 @@
  - g2M   (0.04)		: 6063
  - g3M   (0.06)		: 11556
  - g4M   (0.08)		: 20626
+
+# Temps de génération et lecture
+500 vertices =======================================================
+ - 1k		: 0 0
+ - 2k		: 0 0
+ - 5k		: 0 0
+ - 10k		: 0 0
+ - 50k		: 0 0
+ - 100k		: 0 0
+ - 120k		: 0 0
+
+1000 vertices ========================================================
+ - 1k		: 0 0
+ - 2k		: 0 0
+ - 5k		: 0 0
+ - 10k		: 0 0
+ - 50k		: 0 0 
+ - 100k		: 0 0
+ - 200k		: 1 0
+ - 300k		: 1 0
+ - 400k		: 1 0
+ - 450k		: 1 0
+ - 490k		: 1 0
+
+10000 vertices =====================================================
+ - g100k	: 0   0
+ - g200k	: 1   0
+ - g300k	: 1   0
+ - g400k	: 1   0
+ - g500k	: 1   0
+ - g1M  	: 2   0
+ - g2M  	: 4   0
+ - g3M  	: 7   1
+ - g4M  	: 9   1
+ - g5M		: 11  2
+ - g10M		: 23  9
+ - g15M		: 38  20
+ - g20M		: 47  32 
+ - g40M		: 92  115
+ - g45M		: 111 145

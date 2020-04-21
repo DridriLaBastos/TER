@@ -131,6 +131,7 @@ Vertices getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 		//l'on a trouvé juste avant
 		if (found != nullptr)
 		{
+			std::cout << "first\n";
 			found->emplace_back(v);
 			Weights sumMaxWeights;
 
@@ -166,13 +167,17 @@ Vertices getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 
 			if (shouldCreateNewIS)
 			{
+				std::cout << "second\n";
 				vertexShouldBeAddedToBranche = false;
 				PI.set.emplace_back(Vertices({ v }));
 			}
 		}
 
 		if (vertexShouldBeAddedToBranche)
+		{
+			std::cout << "B" << std::endl;
 			B.emplace_back(v);
+		}
 	}
 	
 	B.orderWith(O);
