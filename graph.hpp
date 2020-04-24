@@ -275,7 +275,7 @@ struct VerticesSet
 	{
 		bool insert = true;
 
-		for (size_t i = 0; i < set.size() - 1; ++i)
+		for (size_t i = 0; i < set.size(); ++i)
 		{
 			//Si le poids ajouté est plus petit qu'un autre poids, on supprime l'insertion et
 			//l'algorithme s'arrête là

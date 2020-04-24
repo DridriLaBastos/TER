@@ -15,7 +15,7 @@ bool operator>(const Weight& w1, const Weight& w2)
 {
 	for (size_t i = 0; i < WEIGHTS_SIZE; ++i)
 	{
-		if (w1[i] <= w2[i])
+		if (w1[i] < w2[i])
 			return false;
 	}
 

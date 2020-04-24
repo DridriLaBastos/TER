@@ -242,28 +242,30 @@ Cliques WLMC(const Graph& G, long long& duration)
 		const Vertex& vi = Vp[j];
 		Vertices P = Vertices::intersectionBetween(vi.neighbors, Vp.subSet(j + 1, Vp.size() - 1));
 
-		if (!(P.weight() <= Cmax.getWeights()))
+		if (!(P.weight() + vi.weight() <= Cmax.getWeights()))
 		{
 			Cliques cliquesToImprove;
 
 			for (const Clique& c: Cmax.set)
 			{
-				if (P.weight() > c.weight())
+				if (P.weight() + vi.weight() > c.weight())
 					cliquesToImprove.set.emplace_back(c);
 			}
 
 			InitReturnType ip = initialize(G[P], cliquesToImprove.getWeights() - vi.weight());
+			
+			const Clique newClique = Clique::unionBetween(ip.C0, vi);
 
-			bool addC0 = true;
+			bool addNewClique = true;
 			for (size_t i = 0; i < cliquesToImprove.set.size(); ++i)
 			{
-				if (cliquesToImprove.set[i].weight() > ip.C0.weight())
+				if (cliquesToImprove.set[i].weight() > newClique.weight())
 				{
-					addC0 = false;
+					addNewClique = false;
 					break;
 				}
 				
-				if (ip.C0.weight() > cliquesToImprove.set[i].weight())
+				if (newClique.weight() > cliquesToImprove.set[i].weight())
 				{
 					std::swap(cliquesToImprove.set[i],cliquesToImprove.set.back());
 					cliquesToImprove.set.pop_back();
@@ -271,8 +273,8 @@ Cliques WLMC(const Graph& G, long long& duration)
 				}
 			}
 
-			if (addC0)
-				cliquesToImprove.set.emplace_back(ip.C0);
+			if (addNewClique)
+				cliquesToImprove.set.emplace_back(newClique);
 
 			Cliques Cp = searchMaxWCliques(ip.Gp, cliquesToImprove, { {vi} }, ip.O0);
 
