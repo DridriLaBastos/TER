@@ -84,16 +84,6 @@ Weight operator- (const Weight& w1, const Weight& w2)
 	return w;
 }
 
-Weights operator- (const Weights& W, const Weight& w)
-{
-	Weights result = W;
-
-	for (Weight& w_p: result)
-		w_p -= w;
-
-	return result;
-}
-
 Weights& operator+= (Weights& weights, const Weights& toAdd)
 {
 	if (weights.empty())

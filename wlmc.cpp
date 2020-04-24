@@ -14,7 +14,7 @@ struct InitReturnType
 };
 
 /** TESTEE ET FONCTIONNE CORRECTEMENT **/
-InitReturnType initialize(const Graph& G, Weights lb)
+InitReturnType initialize(const Graph& G, Weight lb)
 {
 	VertexOrdering O0;	O0.reserve(G.size());
 	Clique C0;
@@ -71,21 +71,8 @@ InitReturnType initialize(const Graph& G, Weights lb)
 		degrees.pop_back();
 	}
 
-	bool emplaceC0Weight = false;
-
-	for (size_t i = 0; i < lb.size(); ++i)
-	{
-		if (C0.weight() > lb[i])
-		{
-			std::swap(lb[i], lb.back());
-			lb.pop_back();
-			--i;
-			emplaceC0Weight = true;
-		}
-	}
-
-	if (emplaceC0Weight)
-		lb.emplace_back(C0.weight());
+	if (C0.weight() > lb)
+		lb = C0.weight();
 
 	for (const Vertex& v : G.getVertices())
 	{
@@ -97,7 +84,7 @@ InitReturnType initialize(const Graph& G, Weights lb)
 	return { C0, O0, Gp };
 }
 
-Vertices getBranches(const Graph& G, const Weights t, const VertexOrdering& O)
+Vertices getBranches(const Graph& G, const Weight t, const VertexOrdering& O)
 {
 	Vertices B;
 	VerticesSet PI;
@@ -192,20 +179,20 @@ Vertices getBranches(const Graph& G, const Weights t, const VertexOrdering& O)
 	return B;
 }
 
-Cliques searchMaxWCliques(const Graph& G, const Cliques& Cmax, const Clique& C, const VertexOrdering& O)
+Cliques searchMaxWCliques(const Graph& G, const Clique& Cmax, const Clique& C, const VertexOrdering& O)
 {
 	if (G.empty())
 		return {{ C }};
 
-	Vertices B = getBranches(G, Cmax.getWeights() - C.weight(), O);
+	Vertices B = getBranches(G, Cmax.weight() - C.weight(), O);
 	if (B.empty())
-		return Cmax;
+		return {{ Cmax }};
 
 	Vertices A = G.getVertices();
 	A.remove(B);
 	B.orderWith(O);
 
-	Cliques results = Cmax;
+	Cliques results {{ Cmax }};
 
 	for (size_t i = B.size() - 1; i < B.size(); --i)
 	{
@@ -214,7 +201,7 @@ Cliques searchMaxWCliques(const Graph& G, const Cliques& Cmax, const Clique& C, 
 		const Vertices& neighbors = B[i].neighbors;
 		Vertices P(Vertices::intersectionBetween(neighbors, unionWithA));
 
-		if (!(Vertices::unionBetween(C, B[i]).weight() + P.weight() <= Cmax.getWeights()))
+		if (!(Vertices::unionBetween(C, B[i]).weight() + P.weight() <= Cmax.weight()))
 		{
 			Cliques Cp = searchMaxWCliques(G[P], Cmax, Vertices::unionBetween(C, B[i]), O);
 
@@ -239,8 +226,8 @@ Cliques WLMC(const Graph& G, long long& duration)
 		const Vertex& vi = Vp[j];
 		Vertices P = Vertices::intersectionBetween(vi.neighbors, Vp.subSet(j + 1, Vp.size() - 1));
 
-		bool improveCliques = true;
-		Cliques cliquesToImprove;
+		bool cliqueToImproveFound = false;
+		Clique cliqueToImprove;
 
 		//Si le poid estimé d'une clique est dominé par une clique de l'ensemble de pareto, on passe directement
 		//au sommet suivant. Dans le cas où cette condition n'arrive pas, on garde en mémoire la première clique
@@ -250,54 +237,35 @@ Cliques WLMC(const Graph& G, long long& duration)
 			//Le poids potentiel est dominé
 			if (Cmax.set[i].weight() > (P.weight() + vi.weight()))
 			{
-				improveCliques = false;
+				cliqueToImproveFound = false;
 				break;
 			}
 
 			//On enregistre la première clique améliorable
 			if (!((P.weight() + vi.weight()) <= Cmax.set[i].weight()))
-				cliquesToImprove.set.emplace_back(Cmax.set[i]);
+			{
+				if (!cliqueToImproveFound)
+				{
+					cliqueToImprove = Cmax.set[i];
+					cliqueToImproveFound = true;
+				}
+			}
 		}
 
 		//On entre ici s'il existe une clique à améliorer
-		if (improveCliques)
+		if (cliqueToImproveFound)
 		{
-			const Weights cliquesToImproveWeights = cliquesToImprove.getWeights();
+			const Weight cliqueToImproveWeight = cliqueToImprove.weight();
 			const Weight viWeight = vi.weight();
 
-			InitReturnType ip = initialize(G[P], cliquesToImproveWeights - viWeight);
+			InitReturnType ip = initialize(G[P], cliqueToImproveWeight - viWeight);
 
-			bool emplaceNewClique = true;
-			const Clique newClique = Clique::unionBetween(ip.C0,vi);
+			if (!((ip.C0.weight() + vi.weight()) <= cliqueToImprove.weight()))
+				cliqueToImprove = Vertices::unionBetween(ip.C0, vi);
 
-			for (size_t i = 0; i < cliquesToImprove.set.size(); ++i)
-			{
-				if (cliquesToImprove.set[i].weight() > newClique.weight())
-				{
-					emplaceNewClique = false;
-					break;
-				}
-
-				if (newClique.weight() > cliquesToImprove.set[i].weight())
-				{
-					std::swap(cliquesToImprove.set[i], cliquesToImprove.set.back());
-					cliquesToImprove.set.pop_back();
-					--i;
-				}
-			}
-
-			if (emplaceNewClique)
-				cliquesToImprove.set.emplace_back(newClique);
-
-			Cliques Cp = searchMaxWCliques(ip.Gp, cliquesToImprove, { {vi} }, ip.O0);
+			Cliques Cp = searchMaxWCliques(ip.Gp, cliqueToImprove, { {vi} }, ip.O0);
 
 			for (const Clique& c: Cp.set)
-				cliquesToImprove.tryInsertAndRemoveDominated(c);
-			
-			for (const Clique& c: cliquesToImprove.set)
-				Cmax.tryInsertAndRemoveDominated(c);
-
-			/*for (const Clique& c: Cp.set)
 			{
 				if (!(c.weight() <= cliqueToImprove.weight()))
 					cliqueToImprove = c;
@@ -329,7 +297,7 @@ Cliques WLMC(const Graph& G, long long& duration)
 
 					Cmax.set.emplace_back(cliqueToImprove);
 				}
-			}*/
+			}
 		}
 	}
 	const auto end = std::chrono::steady_clock::now();
