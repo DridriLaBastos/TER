@@ -37,11 +37,11 @@ bool operator<= (const Weight& w, const Weights& weights)
 {
 	for (const Weight& W : weights)
 	{
-		if (!(w <= W))
-			return false;
+		if (w <= W)
+			return true;
 	}
 
-	return true;
+	return false;
 }
 
 bool operator<= (const Weights& weights, const Weight& W)
