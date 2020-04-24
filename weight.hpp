@@ -103,6 +103,14 @@ Weights& operator+= (Weights& weights, const Weights& toAdd)
 	return weights;
 }
 
+Weights operator- (Weights W, const Weight& w)
+{
+	for (Weight& wp: W)
+		wp -= w;
+	
+	return W;
+}
+
 std::ostream& operator<< (std::ostream& stream, const Weight& w)
 {
 	stream << "{" << w[0];
