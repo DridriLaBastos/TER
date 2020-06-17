@@ -87,7 +87,7 @@ class GraphFileReader
 		//retourne true si elle la fin du buffer n'a pas été rencontré
 		bool passWhites(void)
 		{
-			while (!std::isdigit(*m_lineBufferPtr))
+			while (!std::isdigit(*m_lineBufferPtr) && (*m_lineBufferPtr != '-'))
 			{
 				if ((*m_lineBufferPtr == '\0') || (m_lineBufferPtr - m_lineBuffer) > LINE_BUFFER_SIZE)
 					return false;
